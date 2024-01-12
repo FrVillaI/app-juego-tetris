@@ -1,7 +1,8 @@
-import { Alert, Button, StyleSheet, Text, View, TextInput, ImageBackground, Image } from 'react-native';
+import { Alert, Button, StyleSheet, Text, View, TextInput, ImageBackground, Image, TouchableOpacity } from 'react-native';
 import React, { useState } from 'react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../config/Config'; 
+import { auth } from '../config/Config';
+
 const backgroundImage = require('../assets/fondo_tetris.jpg');
 const logoImage = require('../assets/logo.png');
 
@@ -14,7 +15,7 @@ export default function LoginScreen({ navigation }: any) {
       .then((userCredential) => {
         const user = userCredential.user;
         navigation.navigate('Tabs');
-      
+
         setCorreo('');
         SetContrasenia('');
       })
@@ -63,9 +64,13 @@ export default function LoginScreen({ navigation }: any) {
         />
 
         <View style={styles.buttonContainer}>
-          <Button title='Iniciar sesión' onPress={() => login  ()} color='#c70f0f' />
+          <TouchableOpacity style={styles.buttonI} onPress={() => login()}>
+            <Text style={styles.buttonText}>Iniciar sesión</Text>
+          </TouchableOpacity>
           <View style={styles.buttonSpacer} />
-          <Button title='Registrarse' onPress={() => navigation.navigate('Registro')} color='#0fc73a' />
+          <TouchableOpacity style={styles.buttonR} onPress={() => navigation.navigate('Registro')}>
+            <Text style={styles.buttonText}>Registrarse</Text>
+          </TouchableOpacity>
         </View>
 
       </View>
@@ -112,5 +117,23 @@ const styles = StyleSheet.create({
   },
   buttonSpacer: {
     width: 16,
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 16,
+    textAlign: 'center',
+    fontWeight: 'bold',
+  },
+  buttonI: {
+    backgroundColor: '#c70f0f',
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+  },
+  buttonR: {
+    backgroundColor: '#0fc73a',
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    borderRadius: 5,
   },
 });

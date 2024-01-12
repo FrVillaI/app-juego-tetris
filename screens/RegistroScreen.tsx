@@ -1,13 +1,9 @@
 import React, { useState } from 'react';
-
 import { Alert, Button, StyleSheet, Text, View, TextInput, ImageBackground, Image } from 'react-native';
-
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { getDatabase, ref, set, child, get } from 'firebase/database';
-import { auth } from '../config/Config'; 
-
-
-
+import { auth } from '../config/Config';
+import { TouchableOpacity } from 'react-native-gesture-handler';
 
 const backgroundImage = require('../assets/fondo_tetris.jpg');
 const logoImage = require('../assets/logo.png');
@@ -19,6 +15,7 @@ export default function RegistroScreen({ navigation }: any) {
   const [edad, setEdad] = useState('');
   const [nombre, setNombre] = useState('');
   const [camposIncompletos, setCamposIncompletos] = useState(false);
+
   function register() {
     // Check if the email is already in use
     if (!nombre || !nick || !correo || !contrasenia || !edad) {
@@ -38,20 +35,16 @@ export default function RegistroScreen({ navigation }: any) {
           createUserWithEmailAndPassword(auth, correo, contrasenia)
             .then((userCredential) => {
               const user = userCredential.user;
-
-             
               const userRef = ref(db, `users/${user.uid}`);
               set(userRef, {
-                nick: nick,  
+                nick: nick,
                 correo: correo,
                 edad: edad,
-                nombre:nombre,
-                
+                nombre: nombre,
               });
 
               clearFields();
               navigation.navigate('Inciar_Secion');
-
               Alert.alert('Éxito', 'Registro exitoso');
             })
             .catch((error) => {
@@ -135,9 +128,13 @@ export default function RegistroScreen({ navigation }: any) {
         />
 
         <View style={styles.buttonContainer}>
-          <Button title='Regístrarse' onPress={() => register()} color='#c70f0f' />
+          <TouchableOpacity style={styles.buttonI} onPress={() => register()}>
+            <Text style={styles.buttonText}>Regístrarse</Text>
+          </TouchableOpacity>
           <View style={styles.buttonSpacer} />
-          <Button title='Iniciar sesión' onPress={() => navigation.navigate('Inciar_Secion')} color='#0fc73a' />
+          <TouchableOpacity style={styles.buttonR} onPress={() => navigation.navigate('Inciar_Secion')}>
+            <Text style={styles.buttonText}>Iniciar sesión</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </ImageBackground>
@@ -183,5 +180,23 @@ const styles = StyleSheet.create({
   },
   buttonSpacer: {
     width: 16,
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 16,
+    textAlign: 'center',
+    fontWeight: 'bold',
+  },
+  buttonI: {
+    backgroundColor: '#c70f0f',
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+  },
+  buttonR: {
+    backgroundColor: '#0fc73a',
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    borderRadius: 5,
   },
 });

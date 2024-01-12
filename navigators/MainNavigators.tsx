@@ -30,7 +30,11 @@ function MyStack() {
 
   function MyTabs() {
     return (
-      <Tab.Navigator>
+      <Tab.Navigator
+      screenOptions={{
+        headerShown: false, // Ocultar la barra superior en todas las pantallas
+      }}
+      >
         <Tab.Screen name="Juego" component={JuegoScreen} />
         <Tab.Screen name="Puntuacion" component={ListaPuntuacionScreen} />
         <Tab.Screen name="Perfil" component={PerfilScreen} />
