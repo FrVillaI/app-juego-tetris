@@ -1,32 +1,94 @@
 import React, { useState } from 'react';
-import { View, Text, ImageBackground, Button, Image, TextInput, StyleSheet } from 'react-native';
-import { guardarInfUser, registroUser } from '../components/FireBase';
+
+import { Alert, Button, StyleSheet, Text, View, TextInput, ImageBackground, Image } from 'react-native';
+
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { getDatabase, ref, set, child, get } from 'firebase/database';
+import { auth } from '../config/Config'; 
+
+
+
 
 const backgroundImage = require('../assets/fondo_tetris.jpg');
 const logoImage = require('../assets/logo.png');
 
 export default function RegistroScreen({ navigation }: any) {
-  const [nombre, setNombre] = useState('');
-  const [nick, setNick] = useState('');
   const [correo, setCorreo] = useState('');
   const [contrasenia, setContrasenia] = useState('');
+  const [nick, setNick] = useState('');
   const [edad, setEdad] = useState('');
-  const [camposLimpios, setCamposLimpios] = useState(false);
+  const [nombre, setNombre] = useState('');
+  const [camposIncompletos, setCamposIncompletos] = useState(false);
+  function register() {
+    // Check if the email is already in use
+    if (!nombre || !nick || !correo || !contrasenia || !edad) {
+      Alert.alert('Campos Incompletos', 'Por favor, completa todos los campos.');
+      setCamposIncompletos(true);
+      return;
+    }
+    const db = getDatabase();
+    const usersRef = ref(db, 'users');
+    const query = child(usersRef, nick);
 
-  const limpiarCampos = () => {
-    setNombre('');
-    setNick('');
+    get(query)
+      .then((snapshot) => {
+        if (snapshot.exists()) {
+          Alert.alert('Error', 'El nick ya está en uso por otra cuenta.');
+        } else {
+          createUserWithEmailAndPassword(auth, correo, contrasenia)
+            .then((userCredential) => {
+              const user = userCredential.user;
+
+             
+              const userRef = ref(db, `users/${user.uid}`);
+              set(userRef, {
+                nick: nick,  
+                correo: correo,
+                edad: edad,
+                nombre:nombre,
+                
+              });
+
+              clearFields();
+              navigation.navigate('Inciar_Secion');
+
+              Alert.alert('Éxito', 'Registro exitoso');
+            })
+            .catch((error) => {
+              const errorCode = error.code;
+              const errorMessage = error.message;
+
+              switch (errorCode) {
+                case 'auth/weak-password':
+                  Alert.alert('Error', 'La contraseña es débil. Debe tener al menos 6 caracteres.');
+                  break;
+
+                case 'auth/email-already-in-use':
+                  Alert.alert(
+                    'Error',
+                    'La dirección de correo electrónico ya está en uso por otra cuenta.'
+                  );
+                  break;
+
+                default:
+                  Alert.alert('Error', errorMessage);
+                  break;
+              }
+            });
+        }
+      })
+      .catch((error) => {
+        console.error('Error checking nick availability:', error);
+      });
+  }
+
+  function clearFields() {
     setCorreo('');
     setContrasenia('');
+    setNick('');
     setEdad('');
-    setCamposLimpios(true);
-  };
-
-  const guadarUsuario = () => {
-    registroUser(correo, contrasenia, { navigation });
-    guardarInfUser(nick, correo, edad, nombre);
-    limpiarCampos();
-  };
+    setNick('');
+  }
 
 
   return (
@@ -73,7 +135,7 @@ export default function RegistroScreen({ navigation }: any) {
         />
 
         <View style={styles.buttonContainer}>
-          <Button title='Regístrarse' onPress={() => guadarUsuario()} color='#c70f0f' />
+          <Button title='Regístrarse' onPress={() => register()} color='#c70f0f' />
           <View style={styles.buttonSpacer} />
           <Button title='Iniciar sesión' onPress={() => navigation.navigate('Inciar_Secion')} color='#0fc73a' />
         </View>

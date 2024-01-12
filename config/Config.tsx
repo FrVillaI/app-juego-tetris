@@ -7,13 +7,13 @@ import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 
 // FireBase
 const firebaseConfig = {
-  apiKey: "AIzaSyDMlKaK08VR3Y1hd7XBl97dk7ELY0n880w",
-  authDomain: "app-preuba-iv.firebaseapp.com",
-  databaseURL: "https://app-preuba-iv-default-rtdb.firebaseio.com",
-  projectId: "app-preuba-iv",
-  storageBucket: "app-preuba-iv.appspot.com",
-  messagingSenderId: "849481760885",
-  appId: "1:849481760885:web:f51392fc5358ed8f90b83c"
+  apiKey: "AIzaSyCr3icEja3B45Z1hBGSF1mii696EXFIT9o",
+  authDomain: "taller-173fd.firebaseapp.com",
+  databaseURL: "https://taller-173fd-default-rtdb.firebaseio.com",
+  projectId: "taller-173fd",
+  storageBucket: "taller-173fd.appspot.com",
+  messagingSenderId: "349541614927",
+  appId: "1:349541614927:web:7197ed0dcf6599d0f1b13a"
 };
 
 // Initialize Firebase

@@ -1,25 +1,42 @@
+import { Alert, Button, StyleSheet, Text, View, TextInput, ImageBackground, Image } from 'react-native';
 import React, { useState } from 'react';
-import { View, Text, ImageBackground, Button, Image, TextInput, StyleSheet } from 'react-native';
-import { guardarInfUser, loginUser, registroUser } from '../components/FireBase';
-
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../config/Config'; 
 const backgroundImage = require('../assets/fondo_tetris.jpg');
 const logoImage = require('../assets/logo.png');
 
-export default function InicioSecionScreen({ navigation }: any) {
+export default function LoginScreen({ navigation }: any) {
   const [correo, setCorreo] = useState('');
-  const [contrasenia, setContrasenia] = useState('');
-  const [camposLimpios, setCamposLimpios] = useState(false);
+  const [contrasenia, SetContrasenia] = useState('');
 
-  const limpiarCampos = () => {
-    setCorreo('');
-    setContrasenia('');
-    setCamposLimpios(true);
-  };
+  function login() {
+    signInWithEmailAndPassword(auth, correo, contrasenia)
+      .then((userCredential) => {
+        const user = userCredential.user;
+        navigation.navigate('Tabs');
+      
+        setCorreo('');
+        SetContrasenia('');
+      })
+      .catch((error) => {
+        const errorCode = error.code;
+        const errorMessage = error.message;
 
-  const loginUsuario = () => {
-    loginUser(correo, contrasenia,{navigation});
-    limpiarCampos();
-  };
+        switch (errorCode) {
+          case 'auth/invalid-credential':
+            Alert.alert('Error', 'Credenciales Incorrectas');
+            break;
+
+          case 'auth/missing-password':
+            Alert.alert('Error', 'Credenciales Perdidas');
+            break;
+
+          default:
+            Alert.alert('Error', errorMessage);
+            break;
+        }
+      });
+  }
 
   return (
     <ImageBackground
@@ -40,13 +57,13 @@ export default function InicioSecionScreen({ navigation }: any) {
         <TextInput
           style={styles.input}
           placeholder='Ingresa tu Contraseña'
-          onChangeText={(texto) => setContrasenia(texto)}
+          onChangeText={(texto) => SetContrasenia(texto)}
           value={contrasenia}
           secureTextEntry={true}
         />
 
         <View style={styles.buttonContainer}>
-          <Button title='Iniciar sesión' onPress={() => loginUsuario()} color='#c70f0f' />
+          <Button title='Iniciar sesión' onPress={() => login  ()} color='#c70f0f' />
           <View style={styles.buttonSpacer} />
           <Button title='Registrarse' onPress={() => navigation.navigate('Registro')} color='#0fc73a' />
         </View>
