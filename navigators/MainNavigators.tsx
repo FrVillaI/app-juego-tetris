@@ -20,41 +20,38 @@ function MyStack() {
       screenOptions={{
         headerShown: false,
       }}
-<<<<<<< HEAD
-      >
-        <Stack.Screen name="Welcome" component={WelcomeScreen} />
-        <Stack.Screen name="Tabs" component={MyTabs} />
-        <Stack.Screen name="Inciar_Secion" component={InicioSecionScreen} />
-        <Stack.Screen name="Registro" component={RegistroScreen} />
-
-      </Stack.Navigator>
-    );
-  }
-
-  function MyTabs() {
-    return (
-      <Tab.Navigator>
-        <Tab.Screen name="Juego" component={JuegoScreen} />
-        <Tab.Screen name="Puntuacion" component={ListaPuntuacionScreen} />
-        <Tab.Screen name="Perfil" component={PerfilScreen} />
-
-      </Tab.Navigator>
-    );
-  }
- 
-  export default function TopTabNavigator(){
-    return(
-        <NavigationContainer>
-            <MyStack/>
-        </NavigationContainer>
-    )
-  }
-=======
     >
-      <Stack.Screen name="Welcome" component={WelcomeScreen} />
+      <Stack.Screen
+        name="Welcome"
+        component={WelcomeScreen}
+        options={{
+          title: "Welcome",
+          headerTitleStyle: {
+            fontWeight: 'bold',
+          },
+        }}
+      />
       <Stack.Screen name="Tabs" component={MyTabs} />
-      <Stack.Screen name="Inciar_Secion" component={InicioSecionScreen} />
-      <Stack.Screen name="Registro" component={RegistroScreen} />
+      <Stack.Screen
+        name="Inciar_Secion"
+        component={InicioSecionScreen}
+        options={{
+          title: "Iniciar Sesión",
+          headerTitleStyle: {
+            fontWeight: 'bold',
+          },
+        }}
+      />
+      <Stack.Screen
+        name="Registro"
+        component={RegistroScreen}
+        options={{
+          title: "Registro",
+          headerTitleStyle: {
+            fontWeight: 'bold',
+          },
+        }}
+      />
     </Stack.Navigator>
   );
 }
@@ -64,11 +61,13 @@ function MyTabs() {
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: 'blue', 
-        tabBarInactiveTintColor: 'black', 
+        tabBarActiveTintColor: 'blue',
+        tabBarInactiveTintColor: 'gray',
         tabBarStyle: {
-          backgroundColor: 'white', 
-          
+          backgroundColor: 'white',
+        },
+        tabBarLabelStyle: {
+          fontWeight: 'bold',
         },
       }}
     >
@@ -110,4 +109,3 @@ export default function TopTabNavigator() {
     </NavigationContainer>
   );
 }
->>>>>>> ffeb34159e95f7283bb39289c43ace94c24b8712

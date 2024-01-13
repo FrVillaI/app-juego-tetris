@@ -83,6 +83,7 @@ export default function RegistroScreen({ navigation }: any) {
     setNick('');
     setEdad('');
     setNick('');
+    setNombre('');
   }
 
   return (
