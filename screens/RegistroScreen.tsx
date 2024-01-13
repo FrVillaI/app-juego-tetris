@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alert, Button, StyleSheet, Text, View, TextInput, ImageBackground, Image } from 'react-native';
+import { Alert, StyleSheet, Text, View, TextInput, ImageBackground, Image } from 'react-native';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { getDatabase, ref, set, child, get } from 'firebase/database';
 import { auth } from '../config/Config';
@@ -14,6 +14,7 @@ export default function RegistroScreen({ navigation }: any) {
   const [nick, setNick] = useState('');
   const [edad, setEdad] = useState('');
   const [nombre, setNombre] = useState('');
+  const [mostrarContrasenia, setMostrarContrasenia] = useState(false);
   const [camposIncompletos, setCamposIncompletos] = useState(false);
 
   function register() {
@@ -23,6 +24,7 @@ export default function RegistroScreen({ navigation }: any) {
       setCamposIncompletos(true);
       return;
     }
+
     const db = getDatabase();
     const usersRef = ref(db, 'users');
     const query = child(usersRef, nick);
@@ -83,7 +85,6 @@ export default function RegistroScreen({ navigation }: any) {
     setNick('');
   }
 
-
   return (
     <ImageBackground
       source={backgroundImage}
@@ -112,13 +113,21 @@ export default function RegistroScreen({ navigation }: any) {
           onChangeText={(texto) => setCorreo(texto)}
           value={correo}
         />
-        <TextInput
-          style={styles.input}
-          placeholder='Ingresa tu Contraseña'
-          onChangeText={(texto) => setContrasenia(texto)}
-          value={contrasenia}
-          secureTextEntry={true}
-        />
+        <View style={styles.passwordContainer}>
+          <TextInput
+            style={styles.inputPassword}
+            placeholder='Ingresa tu Contraseña'
+            onChangeText={(texto) => setContrasenia(texto)}
+            value={contrasenia}
+            secureTextEntry={!mostrarContrasenia}
+          />
+          <TouchableOpacity
+            onPress={() => setMostrarContrasenia(!mostrarContrasenia)}
+            style={styles.showPasswordIcon}
+          >
+            <Text style={styles.eyeIcon}>{mostrarContrasenia ? '👁️' : '👁️‍🗨️'}</Text>
+          </TouchableOpacity>
+        </View>
         <TextInput
           style={styles.input}
           placeholder='Ingresa tu Edad'
@@ -174,6 +183,35 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     opacity: 0.8,
     fontSize: 16,
+  },
+  inputPassword: {
+    flex: 1,
+    height: 40,
+    borderColor: 'gray',
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    backgroundColor: 'white',
+    opacity: 0.8,
+    fontSize: 16,
+    borderTopLeftRadius: 5,
+    borderBottomLeftRadius: 5,
+  },
+  passwordContainer: {
+    flexDirection: 'row',
+    width: '80%',
+    marginBottom: 20,
+  },
+  showPasswordIcon: {
+    height: 40,
+    backgroundColor: 'white',
+    opacity: 0.8,
+    borderTopRightRadius: 5,
+    borderBottomRightRadius: 5,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  eyeIcon: {
+    fontSize: 20,
   },
   buttonContainer: {
     flexDirection: 'row',

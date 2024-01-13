@@ -1,5 +1,5 @@
-import { Alert, Button, StyleSheet, Text, View, TextInput, ImageBackground, Image, TouchableOpacity } from 'react-native';
 import React, { useState } from 'react';
+import { Alert, StyleSheet, Text, View, TextInput, ImageBackground, Image, TouchableOpacity } from 'react-native';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../config/Config';
 
@@ -8,16 +8,16 @@ const logoImage = require('../assets/logo.png');
 
 export default function LoginScreen({ navigation }: any) {
   const [correo, setCorreo] = useState('');
-  const [contrasenia, SetContrasenia] = useState('');
+  const [contrasenia, setContrasenia] = useState('');
+  const [mostrarContrasenia, setMostrarContrasenia] = useState(false);
 
   function login() {
     signInWithEmailAndPassword(auth, correo, contrasenia)
       .then((userCredential) => {
         const user = userCredential.user;
         navigation.navigate('Tabs');
-
         setCorreo('');
-        SetContrasenia('');
+        setContrasenia('');
       })
       .catch((error) => {
         const errorCode = error.code;
@@ -55,13 +55,21 @@ export default function LoginScreen({ navigation }: any) {
           onChangeText={(texto) => setCorreo(texto)}
           value={correo}
         />
-        <TextInput
-          style={styles.input}
-          placeholder='Ingresa tu Contraseña'
-          onChangeText={(texto) => SetContrasenia(texto)}
-          value={contrasenia}
-          secureTextEntry={true}
-        />
+        <View style={styles.passwordContainer}>
+          <TextInput
+            style={styles.inputPassword}
+            placeholder='Ingresa tu Contraseña'
+            onChangeText={(texto) => setContrasenia(texto)}
+            value={contrasenia}
+            secureTextEntry={!mostrarContrasenia}
+          />
+          <TouchableOpacity
+            onPress={() => setMostrarContrasenia(!mostrarContrasenia)}
+            style={styles.showPasswordIcon}
+          >
+            <Text style={styles.eyeIcon}>{mostrarContrasenia ? '👁️' : '👁️‍🗨️'}</Text>
+          </TouchableOpacity>
+        </View>
 
         <View style={styles.buttonContainer}>
           <TouchableOpacity style={styles.buttonI} onPress={() => login()}>
@@ -72,7 +80,6 @@ export default function LoginScreen({ navigation }: any) {
             <Text style={styles.buttonText}>Registrarse</Text>
           </TouchableOpacity>
         </View>
-
       </View>
     </ImageBackground>
   );
@@ -111,6 +118,31 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     opacity: 0.8,
     fontSize: 16,
+  },
+  passwordContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '80%',
+    marginBottom: 20,
+    position: 'relative',
+  },
+  inputPassword: {
+    flex: 1,
+    height: 40,
+    borderColor: 'gray',
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    backgroundColor: 'white',
+    opacity: 0.8,
+    fontSize: 16,
+  },
+  showPasswordIcon: {
+    position: 'absolute',
+    right: 10,
+  },
+  eyeIcon: {
+    fontSize: 20,
+    color: 'gray',
   },
   buttonContainer: {
     flexDirection: 'row',
