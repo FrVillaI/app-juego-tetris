@@ -24,6 +24,7 @@ function MyStack() {
         <Stack.Screen name="Tabs" component={MyTabs} />
         <Stack.Screen name="Inciar_Secion" component={InicioSecionScreen} />
         <Stack.Screen name="Registro" component={RegistroScreen} />
+
       </Stack.Navigator>
     );
   }
@@ -34,6 +35,7 @@ function MyStack() {
         <Tab.Screen name="Juego" component={JuegoScreen} />
         <Tab.Screen name="Puntuacion" component={ListaPuntuacionScreen} />
         <Tab.Screen name="Perfil" component={PerfilScreen} />
+
       </Tab.Navigator>
     );
   }
