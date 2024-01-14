@@ -1,10 +1,12 @@
 import 'react-native-gesture-handler';
+
 import { StyleSheet, Text, View } from 'react-native';
-import TopTabNavigator from './navigators/MainNavigators';
+
+import StackNavigator from './navigators/MainNavigators';
 
 export default function App() {
   return (
-      <TopTabNavigator/>
+    <StackNavigator/>
   );
 }
 
@@ -14,5 +16,5 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
-  },
+  },
 });
