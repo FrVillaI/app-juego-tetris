@@ -21,11 +21,6 @@ const HighScores: React.FC = () => {
       messagingSenderId: "349541614927",
       appId: "1:349541614927:web:7197ed0dcf6599d0f1b13a"
     };
-    
-    if (!firebase.apps.length) {
-      firebase.initializeApp(firebaseConfig);
-    }
-
     const scoresRef = firebase.database().ref('highScores');
 
     const handleSnapshot = (snapshot: firebase.database.DataSnapshot | null) => {
