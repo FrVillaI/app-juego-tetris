@@ -1,11 +1,12 @@
-
 import React, { useEffect, useState } from "react";
 import { AppRegistry, StyleSheet, Text, View, Modal, Button } from "react-native";
 import { TouchableOpacity, GestureHandlerRootView } from "react-native-gesture-handler";
 import { db } from "../config/Config";
 import { ref, set, get } from 'firebase/database';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
-
+import { Fontisto } from '@expo/vector-icons';
+import { FontAwesome } from '@expo/vector-icons';
+import { Entypo } from '@expo/vector-icons';
 const BOARD_X = 10;
 const BOARD_Y = 16;
 
@@ -59,7 +60,7 @@ class Tetris {
     this.backupBoard = this.cloneBoard();
   }
 
-  generatePiece() {
+generatePiece() {
     const shape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
     this.piece = {
       x: Math.floor(BOARD_X / 2),
@@ -198,12 +199,15 @@ class Tetris {
   }
 }
 
+ 
+
 const tetris = new Tetris();
 
 const COLORS = ["green", "blue", "red", "orange", "purple"];
 
 const TetrisGames: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
+  const [showStartGameModal, setShowStartGameModal] = useState(true);
   const [userId, setUserId] = useState("");
   const [userName, setUserName] = useState("");
   const [_, render] = useState({});
@@ -224,38 +228,41 @@ const TetrisGames: React.FC = () => {
           }
         });
 
-        const fall = () => {
+        const autoFall = () => {
           tetris.move({ dy: 1 });
           render({});
-          if (tetris.gameOver) {
+          if (!tetris.gameOver) {
+            setTimeout(autoFall, tetris.fallSpeed);
+          } else {
             tetris.updateScore(userId, userName);
             setShowModal(true);
-          } else {
-            setTimeout(fall, tetris.fallSpeed);
           }
         };
 
-        fall();
+        if (falling) {
+          autoFall();
+        }
       }
     });
 
     return () => unsubscribe();
-  }, [userName]);
+  }, [userName, falling]);
 
   const startFalling = () => {
     setFalling(true);
-    const fall = () => {
-      tetris.move({ dy: 1 });
-      render({});
-      if (tetris.gameOver) {
-        tetris.updateScore(userId, userName);
-        setShowModal(true);
-      } else {
-        setTimeout(fall, tetris.fallSpeed);
-      }
-    };
+    setShowStartGameModal(false);
+    autoFall(); // Inicia el movimiento automático hacia abajo
+  };
 
-    fall();
+  const autoFall = () => {
+    tetris.move({ dy: 1 });
+    render({});
+    if (!tetris.gameOver) {
+      setTimeout(autoFall, tetris.fallSpeed);
+    } else {
+      tetris.updateScore(userId, userName);
+      setShowModal(true);
+    }
   };
 
   const handleMoveLeft = () => {
@@ -295,7 +302,7 @@ const TetrisGames: React.FC = () => {
     tetris.board = Array(BOARD_Y).fill("").map(() => Array(BOARD_X).fill(0));
     tetris.generatePiece();
     tetris.updateScore(userId, userName);
-    setShowModal(false);
+    setShowStartGameModal(false);
     render({});
   };
 
@@ -331,21 +338,22 @@ const TetrisGames: React.FC = () => {
               ))}
             </View>
           ))}
-        </View>
+      </View>
         <View style={styles.buttonContainer}>
           <TouchableOpacity onPress={handleMoveLeft} style={styles.button}>
-            <Text>🢀</Text>
+            <Text><FontAwesome name="arrow-left" size={24} color="black" /></Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={handleMoveRight} style={styles.button}>
-            <Text>🢂</Text>
+            <Text><FontAwesome name="arrow-right" size={24} color="black" /></Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={handleRotate} style={styles.button}>
-            <Text>↻</Text>
+            <Text><Fontisto name="arrow-return-left" size={24} color="black" /></Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={handleFallSpeedUp} style={styles.button}>
-            <Text>⏬</Text>
+            <Text><Entypo name="arrow-down" size={24} color="black" /></Text>
           </TouchableOpacity>
         </View>
+
 
         <Modal
           animationType="slide"
@@ -361,6 +369,20 @@ const TetrisGames: React.FC = () => {
             </View>
           </View>
         </Modal>
+
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={showStartGameModal}
+          onRequestClose={() => setShowStartGameModal(false)}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.gameStartText}>¡Empezar Juego!</Text>
+              <Button title="Comenzar" onPress={startFalling} />
+            </View>
+          </View>
+        </Modal>
       </>
     </GestureHandlerRootView>
   );
@@ -373,7 +395,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   button: {
-    backgroundColor: "lightblue",
+ 
     padding: 10,
     borderRadius: 5,
   },
@@ -389,6 +411,11 @@ const styles = StyleSheet.create({
   },
   scoreText: {
     fontSize: 18,
+  },
+  gameStartText: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginBottom: 10,
   },
   modalContainer: {
     flex: 1,

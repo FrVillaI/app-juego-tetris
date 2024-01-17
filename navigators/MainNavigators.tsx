@@ -105,7 +105,7 @@ function MyTabs() {
 export default function TopTabNavigator() {
   return (
     <NavigationContainer>
-      <MyTabs/>
+      <MyStack />
     </NavigationContainer>
   );
 }
