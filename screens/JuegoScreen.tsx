@@ -1,10 +1,15 @@
 // TetrisGames.tsx
 import React, { useEffect, useState } from "react";
-import { AppRegistry, StyleSheet, Text, View } from "react-native";
+import { AppRegistry, StyleSheet, Text, View, Modal, Button } from "react-native";
 import { TouchableOpacity, GestureHandlerRootView } from "react-native-gesture-handler";
+import { getDatabase, ref, get, update,set  } from 'firebase/database';
+import { db } from "../config/Config";
+import { auth } from '../config/Config';
+
+
 
 const BOARD_X = 10;
-const BOARD_Y = 16;
+const BOARD_Y = 15;
 
 const SHAPES: number[][][] = [
   [[1, 1, 1, 1]],
@@ -139,7 +144,7 @@ class Tetris {
 
   rotate() {
     const newShape: number[][] = [];
-    for (let i = 0; i < this.piece.shape[0].length; i++) {
+    for (let i = 0; this.piece.shape[0] && i < this.piece.shape[0].length; i++) {
       const newRow: number[] = [];
       for (let j = this.piece.shape.length - 1; j >= 0; j--) {
         newRow.push(this.piece.shape[j][i]);
@@ -163,26 +168,44 @@ class Tetris {
 
 const tetris = new Tetris();
 
-const cellStyles = (cell: number) => ({
-  width: 40,
-  height: 40,
-  borderWidth: 1,
-  borderColor: "white",
-  backgroundColor: cell === 1 ? "silver" : cell === 2 ? "red" : "black",
-});
+const COLORS = ["green", "blue", "red", "orange", "purple"]; // Agrega más colores según sea necesario
 
 const TetrisGames: React.FC = () => {
+  const [showModal, setShowModal] = useState(false);
   const [_, render] = useState({});
+  const [puntaje, setpuntaje] = useState('');
+  const [gameStarted, setGameStarted] = useState(false);
+  const [tetris, setTetris] = useState(new Tetris());
+
+  const handleStartGame = () => {
+    setGameStarted(true);
+  };
+
+  function writeUserData(score:any) {
+    const db = getDatabase();
+    const user = auth.currentUser;
+    update(ref(db, 'users/' + user?.uid), {
+      score:tetris.score
+  });
+
+  }
+
 
   useEffect(() => {
-    const fall = () => {
-      tetris.move({ dy: 1 });
-      render({});
-      setTimeout(fall, tetris.fallSpeed);
-    };
+    if (gameStarted) { // Modificado para ejecutarse solo si el juego ha comenzado
+      const fall = () => {
+        tetris.move({ dy: 1 });
+        render({});
+        if (tetris.gameOver) {
+          setShowModal(true);
+        } else {
+          setTimeout(fall, tetris.fallSpeed);
+        }
+      };
 
-    fall();
-  }, []);
+      fall();
+    }
+  }, [gameStarted]);
 
   const handleMoveLeft = () => {
     tetris.move({ dx: -1 });
@@ -203,30 +226,59 @@ const TetrisGames: React.FC = () => {
     tetris.increaseFallSpeed();
   };
 
-  if (tetris.gameOver) {
-    return (
-      <View style={styles.gameOverContainer}>
-        <Text style={styles.gameOverText}>Game Over</Text>
-        <Text style={styles.scoreText}>Score: {tetris.score}</Text>
-      </View>
-    );
-  }
+  const handleRestart = () => {
+    tetris.gameOver = false;
+    tetris.score = 0;
+    tetris.board = Array(BOARD_Y).fill("").map(() => Array(BOARD_X).fill(0));
+    tetris.generatePiece();
+    setShowModal(false);
+    render({});
+  };
+
+  const handleRestartGame = () => {
+    writeUserData(tetris.score);
+    setGameStarted(false); // Detener el juego
+    setShowModal(false); // Ocultar el modal
+    setTetris(new Tetris()); // Crear una nueva instancia de Tetris
+    render({}); // Forzar la actualización del componente
+  };
+
+  const cellStyles = (cell: number, y: number) => {
+    let backgroundColor;
+    if (cell === 1) {
+      backgroundColor = "silver";
+    } else if (cell === 2) {
+      backgroundColor = COLORS[y % COLORS.length];
+    } else {
+      backgroundColor = "black";
+    }
+
+    return {
+      width: 40,
+      height: 40,
+      borderWidth: 1,
+      borderColor: "white",
+      backgroundColor,
+    };
+  };
 
   return (
-    <GestureHandlerRootView>
+    <GestureHandlerRootView style={styles.container}>
       <>
-        <Text>Tetris</Text>
-        <Text>Score: {tetris.score}</Text>
-        <View>
+        <Text style={styles.title}>Score: {tetris.score}</Text>
+        <View style={styles.board}>
           {tetris.board.map((row, i) => (
-            <View key={i} style={{ flexDirection: "row" }}>
+            <View key={i} style={styles.row}>
               {row.map((cell, j) => (
-                <View key={j} style={cellStyles(cell)} />
+                <View key={j} style={cellStyles(cell, i)} />
               ))}
             </View>
           ))}
         </View>
         <View style={styles.buttonContainer}>
+          <TouchableOpacity onPress={handleStartGame} style={styles.startButton}>
+            <Text>Start</Text>
+          </TouchableOpacity>
           <TouchableOpacity onPress={handleMoveLeft} style={styles.button}>
             <Text>🢀</Text>
           </TouchableOpacity>
@@ -240,12 +292,49 @@ const TetrisGames: React.FC = () => {
             <Text>⏬</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Game Over Modal */}
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={showModal}
+          onRequestClose={() => setShowModal(false)}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.gameOverText}>Game Over</Text>
+              <Text style={styles.scoreText}>Score: {tetris.score}</Text>
+              <Button title="Restart" onPress={handleRestartGame} />
+            </View>
+          </View>
+        </Modal>
       </>
     </GestureHandlerRootView>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#f0f0f0",
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginTop: 20,
+  },
+  score: {
+    fontSize: 18,
+    textAlign: "center",
+    marginTop: 10,
+  },
+  board: {
+    marginVertical: 10,
+  },
+  row: {
+    flexDirection: "row",
+  },
   buttonContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
@@ -253,6 +342,11 @@ const styles = StyleSheet.create({
   },
   button: {
     backgroundColor: "lightblue",
+    padding: 10,
+    borderRadius: 5,
+  },
+  startButton: {
+    backgroundColor: "lightgreen",
     padding: 10,
     borderRadius: 5,
   },
@@ -269,14 +363,18 @@ const styles = StyleSheet.create({
   scoreText: {
     fontSize: 18,
   },
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalContent: {
+    backgroundColor: "white",
+    padding: 20,
+    borderRadius: 10,
+    alignItems: "center",
+  },
 });
 
 export default TetrisGames;
-
-const App = () => (
-  <GestureHandlerRootView>
-    <TetrisGames />
-  </GestureHandlerRootView>
-);
-
-AppRegistry.registerComponent("YourAppName", () => App);
