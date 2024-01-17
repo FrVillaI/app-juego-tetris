@@ -1,15 +1,13 @@
-// TetrisGames.tsx
+
 import React, { useEffect, useState } from "react";
 import { AppRegistry, StyleSheet, Text, View, Modal, Button } from "react-native";
 import { TouchableOpacity, GestureHandlerRootView } from "react-native-gesture-handler";
-import { getDatabase, ref, get, update,set  } from 'firebase/database';
 import { db } from "../config/Config";
-import { auth } from '../config/Config';
-
-
+import { ref, set, get } from 'firebase/database';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
 
 const BOARD_X = 10;
-const BOARD_Y = 15;
+const BOARD_Y = 16;
 
 const SHAPES: number[][][] = [
   [[1, 1, 1, 1]],
@@ -45,7 +43,8 @@ class Tetris {
   gameOver: boolean;
   score: number;
   fallSpeed: number;
-
+  private backupBoard: number[][];
+  
   constructor() {
     this.board = Array(BOARD_Y).fill("").map(() => Array(BOARD_X).fill(0));
     this.piece = {
@@ -57,6 +56,7 @@ class Tetris {
     this.score = 0;
     this.fallSpeed = 1000;
     this.generatePiece();
+    this.backupBoard = this.cloneBoard();
   }
 
   generatePiece() {
@@ -64,7 +64,7 @@ class Tetris {
     this.piece = {
       x: Math.floor(BOARD_X / 2),
       y: 0,
-      shape,
+      shape: this.cloneShape(shape),
     };
 
     if (!this.check()) {
@@ -80,7 +80,10 @@ class Tetris {
       for (let x = 0; x < shape[0].length; x++) {
         const newY = this.piece.y + y;
         const newX = this.piece.x + x;
-        this.board[newY][newX] = remove ? 0 : stick ? 2 : shape[y][x];
+
+        if (shape[y][x] === 1) {
+          this.board[newY][newX] = remove ? 0 : stick ? 2 : 1;
+        }
       }
     }
   }
@@ -99,7 +102,7 @@ class Tetris {
           return false;
         }
 
-        if (this.board[newY][newX] === 2) {
+        if (shape[y][x] === 1 && this.board[newY][newX] === 2) {
           return false;
         }
       }
@@ -133,6 +136,7 @@ class Tetris {
     }
 
     if (!valid) {
+      this.board = this.cloneBoard();
       return;
     }
 
@@ -143,16 +147,9 @@ class Tetris {
   }
 
   rotate() {
-    const newShape: number[][] = [];
-    for (let i = 0; this.piece.shape[0] && i < this.piece.shape[0].length; i++) {
-      const newRow: number[] = [];
-      for (let j = this.piece.shape.length - 1; j >= 0; j--) {
-        newRow.push(this.piece.shape[j][i]);
-      }
-      newShape.push(newRow);
-    }
+    const newShape = this.rotateShape(this.piece.shape);
 
-    const rotatedPiece = { ...this.piece, shape: newShape };
+    const rotatedPiece = { ...this.piece, shape: this.cloneShape(newShape) };
 
     if (this.check({ dy: 0 }, rotatedPiece)) {
       this.place({ remove: true });
@@ -161,51 +158,105 @@ class Tetris {
     }
   }
 
+  rotateShape(original: number[][]): number[][] {
+    const rows = original.length;
+    const cols = original[0].length;
+    const newShape: number[][] = [];
+
+    for (let i = 0; i < cols; i++) {
+      const newRow: number[] = [];
+      for (let j = rows - 1; j >= 0; j--) {
+        newRow.push(original[j][i]);
+      }
+      newShape.push(newRow);
+    }
+
+    return newShape;
+  }
+
   increaseFallSpeed() {
     this.fallSpeed = Math.max(this.fallSpeed - 100, 100);
+  }
+  updateScore(userId: string, userName: string) {
+    if (userName) {
+      const scoreRef = ref(db, `scores/${userId}`);
+      set(scoreRef, {
+        userName: userName,
+        score: this.score,
+      });
+    } else {
+   
+    }
+  }
+
+  private cloneBoard(): number[][] {
+    return this.board.map(row => [...row]);
+  }
+
+  private cloneShape(original: number[][]): number[][] {
+    return original.map(row => [...row]);
   }
 }
 
 const tetris = new Tetris();
 
-const COLORS = ["green", "blue", "red", "orange", "purple"]; // Agrega más colores según sea necesario
+const COLORS = ["green", "blue", "red", "orange", "purple"];
 
 const TetrisGames: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
+  const [userId, setUserId] = useState("");
+  const [userName, setUserName] = useState("");
   const [_, render] = useState({});
-  const [puntaje, setpuntaje] = useState('');
-  const [gameStarted, setGameStarted] = useState(false);
-  const [tetris, setTetris] = useState(new Tetris());
 
-  const handleStartGame = () => {
-    setGameStarted(true);
-  };
-
-  function writeUserData(score:any) {
-    const db = getDatabase();
-    const user = auth.currentUser;
-    update(ref(db, 'users/' + user?.uid), {
-      score:tetris.score
-  });
-
-  }
-
-
+  const [falling, setFalling] = useState(false);
   useEffect(() => {
-    if (gameStarted) { // Modificado para ejecutarse solo si el juego ha comenzado
-      const fall = () => {
-        tetris.move({ dy: 1 });
-        render({});
-        if (tetris.gameOver) {
-          setShowModal(true);
-        } else {
-          setTimeout(fall, tetris.fallSpeed);
-        }
-      };
+    const auth = getAuth();
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        const userId = user.uid;
+        setUserId(userId);
 
-      fall();
-    }
-  }, [gameStarted]);
+        const userRef = ref(db, `users/${userId}`);
+        get(userRef).then((snapshot) => {
+          if (snapshot.exists()) {
+            const userData = snapshot.val();
+            setUserName(userData.nombre);
+          }
+        });
+
+        const fall = () => {
+          tetris.move({ dy: 1 });
+          render({});
+          if (tetris.gameOver) {
+            tetris.updateScore(userId, userName);
+            setShowModal(true);
+          } else {
+            setTimeout(fall, tetris.fallSpeed);
+          }
+        };
+
+        fall();
+      }
+    });
+
+    return () => unsubscribe();
+  }, [userName]);
+
+  const startFalling = () => {
+    setFalling(true);
+    const fall = () => {
+      tetris.move({ dy: 1 });
+      render({});
+      if (tetris.gameOver) {
+        tetris.updateScore(userId, userName);
+        setShowModal(true);
+      } else {
+        setTimeout(fall, tetris.fallSpeed);
+      }
+    };
+
+    fall();
+  };
 
   const handleMoveLeft = () => {
     tetris.move({ dx: -1 });
@@ -231,16 +282,21 @@ const TetrisGames: React.FC = () => {
     tetris.score = 0;
     tetris.board = Array(BOARD_Y).fill("").map(() => Array(BOARD_X).fill(0));
     tetris.generatePiece();
+    tetris.updateScore(userId, userName);
     setShowModal(false);
+    setFalling(false);
     render({});
+    startFalling();
   };
 
-  const handleRestartGame = () => {
-    writeUserData(tetris.score);
-    setGameStarted(false); // Detener el juego
-    setShowModal(false); // Ocultar el modal
-    setTetris(new Tetris()); // Crear una nueva instancia de Tetris
-    render({}); // Forzar la actualización del componente
+  const handleStartGame = () => {
+    tetris.gameOver = false;
+    tetris.score = 0;
+    tetris.board = Array(BOARD_Y).fill("").map(() => Array(BOARD_X).fill(0));
+    tetris.generatePiece();
+    tetris.updateScore(userId, userName);
+    setShowModal(false);
+    render({});
   };
 
   const cellStyles = (cell: number, y: number) => {
@@ -263,12 +319,13 @@ const TetrisGames: React.FC = () => {
   };
 
   return (
-    <GestureHandlerRootView style={styles.container}>
+    <GestureHandlerRootView>
       <>
-        <Text style={styles.title}>Score: {tetris.score}</Text>
-        <View style={styles.board}>
+        <Text>Tetris</Text>
+        <Text>Score: {tetris.score}</Text>
+        <View>
           {tetris.board.map((row, i) => (
-            <View key={i} style={styles.row}>
+            <View key={i} style={{ flexDirection: "row" }}>
               {row.map((cell, j) => (
                 <View key={j} style={cellStyles(cell, i)} />
               ))}
@@ -276,9 +333,6 @@ const TetrisGames: React.FC = () => {
           ))}
         </View>
         <View style={styles.buttonContainer}>
-          <TouchableOpacity onPress={handleStartGame} style={styles.startButton}>
-            <Text>Start</Text>
-          </TouchableOpacity>
           <TouchableOpacity onPress={handleMoveLeft} style={styles.button}>
             <Text>🢀</Text>
           </TouchableOpacity>
@@ -293,7 +347,6 @@ const TetrisGames: React.FC = () => {
           </TouchableOpacity>
         </View>
 
-        {/* Game Over Modal */}
         <Modal
           animationType="slide"
           transparent={true}
@@ -304,7 +357,7 @@ const TetrisGames: React.FC = () => {
             <View style={styles.modalContent}>
               <Text style={styles.gameOverText}>Game Over</Text>
               <Text style={styles.scoreText}>Score: {tetris.score}</Text>
-              <Button title="Restart" onPress={handleRestartGame} />
+              <Button title="Restart" onPress={handleRestart} />
             </View>
           </View>
         </Modal>
@@ -314,27 +367,6 @@ const TetrisGames: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f0f0f0",
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    textAlign: "center",
-    marginTop: 20,
-  },
-  score: {
-    fontSize: 18,
-    textAlign: "center",
-    marginTop: 10,
-  },
-  board: {
-    marginVertical: 10,
-  },
-  row: {
-    flexDirection: "row",
-  },
   buttonContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
@@ -342,11 +374,6 @@ const styles = StyleSheet.create({
   },
   button: {
     backgroundColor: "lightblue",
-    padding: 10,
-    borderRadius: 5,
-  },
-  startButton: {
-    backgroundColor: "lightgreen",
     padding: 10,
     borderRadius: 5,
   },
@@ -378,3 +405,11 @@ const styles = StyleSheet.create({
 });
 
 export default TetrisGames;
+
+const App = () => (
+  <GestureHandlerRootView>
+    <TetrisGames />
+  </GestureHandlerRootView>
+);
+
+AppRegistry.registerComponent("YourAppName", () => App);

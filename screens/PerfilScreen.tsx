@@ -1,12 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ImageBackground, Modal, Button } from 'react-native';
+import { View, Text, TextInput,TouchableOpacity,StyleSheet,Alert,ImageBackground,Modal,Image,} from 'react-native';
 import { getDatabase, ref, get, update } from 'firebase/database';
 import { auth } from '../config/Config';
-import { getAuth, signOut } from 'firebase/auth';
+import { getAuth, signOut, updateProfile as updateProfileAuth } from 'firebase/auth';
+import { storage } from '../config/Config';
+import * as ImagePicker from 'expo-image-picker';
+import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { LogBox } from 'react-native';
+
+LogBox.ignoreAllLogs(true);
 
 const backgroundImage = require('../assets/fongoPe.jpg');
 const backgroundModalImage = require('../assets/fondoP.jpg');
-
 
 export default function PerfilScreen({ navigation }: any) {
   const [nick, setNick] = useState('');
@@ -14,6 +19,8 @@ export default function PerfilScreen({ navigation }: any) {
   const [nombre, setNombre] = useState('');
   const [edad, setEdad] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
+  const [image, setImagen] = useState('');
+  const [cameraImage, setCameraImage] = useState('');
 
   useEffect(() => {
     const db = getDatabase();
@@ -37,65 +44,168 @@ export default function PerfilScreen({ navigation }: any) {
     }
   }, []);
 
+  const pickImage = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    console.log(result);
+
+    if (!result.canceled) {
+      setImagen(result.assets[0].uri);
+    }
+  };
+
+  const takePhoto = async () => {
+    let result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    console.log(result);
+
+    if (!result.canceled) {
+      setImagen(result.assets[0].uri);
+    }
+  };
+
+  const pickImageOrTakePhoto = async () => {
+    Alert.alert(
+      'Seleccionar fuente',
+      '¿Cómo quieres obtener la imagen?',
+      [
+        {
+          text: 'Seleccionar de la galería',
+          onPress: () => pickImage(),
+        },
+        {
+          text: 'Tomar una foto',
+          onPress: () => takePhoto(),
+        },
+        {
+          text: 'Cancelar',
+          style: 'cancel',
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
+  async function subirImagen(nombre: string) {
+    const storageReference = storageRef(storage, `usuarios/${auth.currentUser?.uid}_${nombre}`);
+    const source = cameraImage || image;
+
+    try {
+      const response = await fetch(source);
+      const blob = await response.blob();
+
+      await uploadBytes(storageReference, blob, {
+        contentType: 'image/jpg',
+      });
+
+      console.log('La imagen se subió con éxito');
+    const photoURL = await getDownloadURL(storageReference);
+
+    Alert.alert('Éxito', 'Imagen cargada correctamente');
+
+    return photoURL;
+  } catch (error) {
+    console.error(error);
+    
+    return null;
+  }
+}
+
+  function cerrarSesion() {
+    const auth = getAuth();
+    signOut(auth)
+      .then(() => {
+        navigation.navigate('Welcome');
+      })
+      .catch((error) => {
+        console.error('Error cerrando sesión:', error);
+      });
+  }
+
   function updateProfile() {
     const db = getDatabase();
     const user = auth.currentUser;
 
     if (user) {
       const userRef = ref(db, `users/${user.uid}`);
-      update(userRef, { edad, nombre, nick, correo })
-        .then(() => {
-          Alert.alert('Éxito', 'Perfil actualizado correctamente');
-          setModalVisible(false);
+
+      subirImagen('Avatar1').then((photoURL) => {
+        update(userRef, { edad, nombre, nick, correo })
+          .then(() => {
+            setModalVisible(false);
+            Alert.alert('Éxito', 'Perfil actualizado correctamente');
+          })
+          .catch((error) => {
+            console.error('Error updating profile:', error);
+          });
+
+        updateProfileAuth(user, {
+          displayName: nombre,
+          photoURL: photoURL,
         })
-        .catch((error) => {
-          console.error('Error updating profile:', error);
-        });
+          .then(() => {
+            console.log('User profile updated successfully');
+          })
+          .catch((error) => {
+            console.error('Error updating user profile:', error);
+          });
+      });
     }
   }
 
-  function cerrarSesion() {
-    const auth = getAuth();
-    signOut(auth).then(() => {
-      // Cierre de sesión exitoso.
-      navigation.navigate('Welcome');
-    }).catch((error) => {
-      // Se produjo un error.
-    });
-  }
-
   return (
-    <ImageBackground
-      source={backgroundImage}
-      style={styles.backgroundImage}
-    >
+    <ImageBackground source={backgroundImage} style={styles.backgroundImage}>
       <View style={styles.container}>
         <Text style={styles.title}>Perfil de Usuario</Text>
+  
+        <TouchableOpacity style={styles.imageContainer} onPress={pickImageOrTakePhoto}>
+          {cameraImage ? (
+            <Image source={{ uri: cameraImage }} style={styles.circularImage} />
+          ) : image ? (
+            <Image source={{ uri: image }} style={styles.circularImage} />
+          ) : (
+            <Text style={styles.selectImageText}>Seleccionar Imagen</Text>
+          )}
+        </TouchableOpacity>
+  
+        <TouchableOpacity style={styles.button} onPress={() => subirImagen('Avatar1')}>
+          <Text style={styles.buttonText}>Cargar Imagen</Text>
+        </TouchableOpacity>
+  
         <View style={styles.infoContainer}>
           <Text style={styles.label}>Nombre: {nombre}</Text>
           <Text style={styles.label}>Nick: {nick}</Text>
           <Text style={styles.label}>Correo: {correo}</Text>
           <Text style={styles.label}>Edad: {edad}</Text>
         </View>
+  
         <TouchableOpacity style={styles.button} onPress={() => setModalVisible(true)}>
           <Text style={styles.buttonText}>Editar</Text>
         </TouchableOpacity>
-        <View style={styles.infoContainer}/>
-        <TouchableOpacity style={styles.buttonDel} onPress={() => cerrarSesion()}>
-          <Text style={styles.buttonTextDel}>Cerrar Sesion</Text>
+  
+        <View style={styles.infoContainer} />
+  
+        <TouchableOpacity style={styles.buttonDel} onPress={cerrarSesion}>
+          <Text style={styles.buttonTextDel}>Cerrar Sesión</Text>
         </TouchableOpacity>
+  
         <Modal
           animationType="slide"
           transparent={true}
           visible={modalVisible}
-          onRequestClose={() => {
-            setModalVisible(!modalVisible);
-          }}
+          onRequestClose={() => setModalVisible(!modalVisible)}
         >
-          <ImageBackground
-            source={backgroundModalImage}
-            style={styles.backgroundImage}
-          >
+          <ImageBackground source={backgroundModalImage} style={styles.backgroundImage}>
             <View style={styles.modalContainer}>
               <Text style={styles.title}>Actualizar Datos</Text>
               <TextInput
@@ -110,10 +220,12 @@ export default function PerfilScreen({ navigation }: any) {
                 value={edad}
                 onChangeText={(texto) => setEdad(texto)}
               />
-              <TouchableOpacity style={styles.button} onPress={() => updateProfile()}>
+              <TouchableOpacity style={styles.button} onPress={updateProfile}>
                 <Text style={styles.buttonText}>Actualizar</Text>
               </TouchableOpacity>
+  
               <View style={styles.infoContainer} />
+  
               <TouchableOpacity style={styles.buttonDel} onPress={() => setModalVisible(false)}>
                 <Text style={styles.buttonTextDel}>Cancelar</Text>
               </TouchableOpacity>
@@ -123,15 +235,14 @@ export default function PerfilScreen({ navigation }: any) {
       </View>
     </ImageBackground>
   );
-}
-
+          }
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Fondo oscuro semi-transparente
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContainer: {
     flex: 1,
@@ -141,7 +252,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   title: {
-    fontSize: 32,
+    fontSize: 24,
     marginBottom: 20,
     fontWeight: 'bold',
     color: '#ffffff',
@@ -167,21 +278,20 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     opacity: 0.8,
     fontSize: 16,
+    borderRadius: 5,
   },
   button: {
     backgroundColor: '#4CAF50',
     paddingVertical: 15,
     paddingHorizontal: 20,
     borderRadius: 5,
+    marginVertical: 10,
+    width: '80%',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   buttonText: {
     color: 'black',
-    fontSize: 16,
-    textAlign: 'center',
-    fontWeight: 'bold',
-  },
-  buttonTextDel: {
-    color: 'white',
     fontSize: 16,
     textAlign: 'center',
     fontWeight: 'bold',
@@ -191,10 +301,45 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     paddingHorizontal: 20,
     borderRadius: 5,
+    marginVertical: 10,
+    width: '80%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonTextDel: {
+    color: 'white',
+    fontSize: 16,
+    textAlign: 'center',
+    fontWeight: 'bold',
   },
   backgroundImage: {
     flex: 1,
     resizeMode: 'cover',
     justifyContent: 'center',
+  },
+  imageContainer: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  circularImage: {
+    width: 150,
+    height: 150,
+    resizeMode: 'cover',
+    borderRadius: 75,
+    marginVertical: 20,
+  },
+  selectImageText: {
+    color: '#ffffff',
+    fontSize: 16,
+    textAlign: 'center',
+    fontWeight: 'bold',
+    marginTop: 20,
+  },
+  img: {
+    width: 300,
+    height: 250,
+    resizeMode: 'contain',
+    borderRadius: 20,
+    marginVertical: 20,
   },
 });
