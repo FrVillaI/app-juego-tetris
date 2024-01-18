@@ -7,6 +7,9 @@ import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { Fontisto } from '@expo/vector-icons';
 import { FontAwesome } from '@expo/vector-icons';
 import { Entypo } from '@expo/vector-icons';
+import { useFonts } from "expo-font";
+import { Audio } from 'expo-av';
+
 const BOARD_X = 10;
 const BOARD_Y = 16;
 
@@ -45,7 +48,7 @@ class Tetris {
   score: number;
   fallSpeed: number;
   private backupBoard: number[][];
-  
+
   constructor() {
     this.board = Array(BOARD_Y).fill("").map(() => Array(BOARD_X).fill(0));
     this.piece = {
@@ -60,7 +63,7 @@ class Tetris {
     this.backupBoard = this.cloneBoard();
   }
 
-generatePiece() {
+  generatePiece() {
     const shape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
     this.piece = {
       x: Math.floor(BOARD_X / 2),
@@ -186,7 +189,7 @@ generatePiece() {
         score: this.score,
       });
     } else {
-   
+
     }
   }
 
@@ -199,8 +202,6 @@ generatePiece() {
   }
 }
 
- 
-
 const tetris = new Tetris();
 
 const COLORS = ["green", "blue", "red", "orange", "purple"];
@@ -211,6 +212,20 @@ const TetrisGames: React.FC = () => {
   const [userId, setUserId] = useState("");
   const [userName, setUserName] = useState("");
   const [_, render] = useState({});
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const [musicPlaying, setMusicPlaying] = useState(false);
+
+  async function playSound() {
+    if (sound !== null) {
+      if (!musicPlaying) {
+        await sound.playAsync();
+        setMusicPlaying(true);
+      } else {
+        await sound.stopAsync();
+        setMusicPlaying(false);
+      }
+    }
+  }
 
   const [falling, setFalling] = useState(false);
   useEffect(() => {
@@ -230,12 +245,16 @@ const TetrisGames: React.FC = () => {
 
         const autoFall = () => {
           tetris.move({ dy: 1 });
-          render({});
           if (!tetris.gameOver) {
             setTimeout(autoFall, tetris.fallSpeed);
           } else {
             tetris.updateScore(userId, userName);
             setShowModal(true);
+
+            // Stop the sound when the game is over
+            if (sound) {
+              sound.stopAsync();
+            }
           }
         };
 
@@ -245,6 +264,15 @@ const TetrisGames: React.FC = () => {
       }
     });
 
+    const loadSound = async () => {
+      console.log('Loading Sound');
+      const { sound } = await Audio.Sound.createAsync(require('../assets/TeS.mp3'));
+      setSound(sound);
+
+      console.log('Sound loaded');
+    };
+
+
     return () => unsubscribe();
   }, [userName, falling]);
 
@@ -252,7 +280,9 @@ const TetrisGames: React.FC = () => {
     setFalling(true);
     setShowStartGameModal(false);
     autoFall(); // Inicia el movimiento automático hacia abajo
+    playSound(); // Inicia la música
   };
+
 
   const autoFall = () => {
     tetris.move({ dy: 1 });
@@ -284,7 +314,7 @@ const TetrisGames: React.FC = () => {
     tetris.increaseFallSpeed();
   };
 
-  const handleRestart = () => {
+  const handleRestart = async () => {
     tetris.gameOver = false;
     tetris.score = 0;
     tetris.board = Array(BOARD_Y).fill("").map(() => Array(BOARD_X).fill(0));
@@ -294,16 +324,28 @@ const TetrisGames: React.FC = () => {
     setFalling(false);
     render({});
     startFalling();
+    await playSound();
   };
 
-  const handleStartGame = () => {
+  const handleStartGame = async () => {
     tetris.gameOver = false;
     tetris.score = 0;
     tetris.board = Array(BOARD_Y).fill("").map(() => Array(BOARD_X).fill(0));
     tetris.generatePiece();
     tetris.updateScore(userId, userName);
     setShowStartGameModal(false);
+    setFalling(false);
     render({});
+    
+    // Detener la música con un pequeño retardo
+    if (sound) {
+      await sound.stopAsync();
+      await new Promise(resolve => setTimeout(resolve, 500)); // Ajusta el retardo según sea necesario
+  
+      // Reiniciar la música y comenzar el juego
+      await playSound();
+      startFalling();
+    }
   };
 
   const cellStyles = (cell: number, y: number) => {
@@ -328,8 +370,8 @@ const TetrisGames: React.FC = () => {
   return (
     <GestureHandlerRootView>
       <>
-        <Text>Tetris</Text>
-        <Text>Score: {tetris.score}</Text>
+        <Text style={styles.scoreText}>Tetris</Text>
+        <Text style={styles.scoreText}>Score: {tetris.score}</Text>
         <View>
           {tetris.board.map((row, i) => (
             <View key={i} style={{ flexDirection: "row" }}>
@@ -338,7 +380,7 @@ const TetrisGames: React.FC = () => {
               ))}
             </View>
           ))}
-      </View>
+        </View>
         <View style={styles.buttonContainer}>
           <TouchableOpacity onPress={handleMoveLeft} style={styles.button}>
             <Text><FontAwesome name="arrow-left" size={24} color="black" /></Text>
@@ -365,7 +407,7 @@ const TetrisGames: React.FC = () => {
             <View style={styles.modalContent}>
               <Text style={styles.gameOverText}>Game Over</Text>
               <Text style={styles.scoreText}>Score: {tetris.score}</Text>
-              
+
               <Button title="Restart" onPress={handleRestart} />
             </View>
           </View>
@@ -396,7 +438,6 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   button: {
- 
     padding: 10,
     borderRadius: 5,
   },
@@ -411,7 +452,9 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   scoreText: {
-    fontSize: 18,
+    fontSize: 24, // Tamaño más grande
+    fontWeight: "bold", // Negrita
+    textAlign: 'center',
   },
   gameStartText: {
     fontSize: 24,
@@ -433,11 +476,3 @@ const styles = StyleSheet.create({
 });
 
 export default TetrisGames;
-
-const App = () => (
-  <GestureHandlerRootView>
-    <TetrisGames />
-  </GestureHandlerRootView>
-);
-
-AppRegistry.registerComponent("YourAppName", () => App);
