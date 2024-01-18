@@ -7,7 +7,8 @@ import { storage } from '../config/Config';
 import * as ImagePicker from 'expo-image-picker';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { LogBox } from 'react-native';
-
+import { Fontisto } from '@expo/vector-icons';
+import { FontAwesome } from '@expo/vector-icons';
 LogBox.ignoreAllLogs(true);
 
 const backgroundImage = require('../assets/fongoPe.jpg');
@@ -84,8 +85,8 @@ export default function PerfilScreen({ navigation }: any) {
           onPress: () => pickImage(),
         },
         {
-          text: 'Tomar una foto',
-          onPress: () => takePhoto(),
+          text: 'Cargar Imagen',
+          onPress: () => subirImagen('Avatar1'), // Lógica para cargar imagen
         },
         {
           text: 'Cancelar',
@@ -95,7 +96,6 @@ export default function PerfilScreen({ navigation }: any) {
       { cancelable: true }
     );
   };
-
   async function subirImagen(nombre: string) {
     const storageReference = storageRef(storage, `usuarios/${auth.currentUser?.uid}_${nombre}`);
     const source = cameraImage || image;
@@ -167,20 +167,22 @@ export default function PerfilScreen({ navigation }: any) {
     <ImageBackground source={backgroundImage} style={styles.backgroundImage}>
       <View style={styles.container}>
         <Text style={styles.title}>Perfil de Usuario</Text>
-  
-        <TouchableOpacity style={styles.imageContainer} onPress={pickImageOrTakePhoto}>
-          {cameraImage ? (
-            <Image source={{ uri: cameraImage }} style={styles.circularImage} />
-          ) : image ? (
-            <Image source={{ uri: image }} style={styles.circularImage} />
-          ) : (
-            <Text style={styles.selectImageText}>Seleccionar Imagen</Text>
-          )}
-        </TouchableOpacity>
-  
-        <TouchableOpacity style={styles.button} onPress={() => subirImagen('Avatar1')}>
-          <Text style={styles.buttonText}>Cargar Imagen</Text>
-        </TouchableOpacity>
+        <View style={styles.imageContainer}>
+          <TouchableOpacity onPress={pickImageOrTakePhoto}>
+            {cameraImage || image ? (
+              <Image source={{ uri: cameraImage || image }} style={styles.circularImage} />
+            ) : (
+              <View style={styles.circularPlaceholder}>
+                <Fontisto name="person" size={40} color="black" />
+              </View>
+            )}
+          </TouchableOpacity>
+          {/* Agregar el ícono de la cámara a la derecha de la imagen */}
+          <TouchableOpacity style={styles.cameraIconContainer} onPress={takePhoto}>
+            <FontAwesome name="camera" size={24} color="white" />
+          </TouchableOpacity>
+        </View>
+      
   
         <View style={styles.infoContainer}>
           <Text style={styles.label}>Nombre: {nombre}</Text>
@@ -243,6 +245,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  cameraIconContainer: {
+    position: 'absolute',
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    borderRadius: 20,
+    padding: 8,
+    margin: 8,
+  },
+  circularPlaceholder: {
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: '#c7c6c2', 
+    marginVertical: 20,
+  justifyContent: 'center',
+  alignItems: 'center',
   },
   modalContainer: {
     flex: 1,
