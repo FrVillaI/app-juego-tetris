@@ -330,7 +330,7 @@ const styles = StyleSheet.create({
   },
   selectImageText: {
     color: '#ffffff',
-    fontSize: 16,
+    fontSize: 20,
     textAlign: 'center',
     fontWeight: 'bold',
     marginTop: 20,

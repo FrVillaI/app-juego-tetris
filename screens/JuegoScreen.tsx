@@ -364,7 +364,7 @@ const TetrisGames: React.FC = () => {
           <View style={styles.modalContainer}>
             <View style={styles.modalContent}>
               <Text style={styles.gameOverText}>Game Over</Text>
-              <Text style={styles.scoreText}>Score: {tetris.score}</Text>
+              <Text style={styles.scoreText}>Score: {tetris.score}</Text>            
               <Button title="Restart" onPress={handleRestart} />
             </View>
           </View>
