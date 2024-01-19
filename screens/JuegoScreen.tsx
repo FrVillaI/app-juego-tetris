@@ -13,7 +13,7 @@ import { useFonts } from "expo-font";
 import { Audio } from 'expo-av';
 
 
-const BOARD_X = 10;
+const BOARD_X = 8;
 const BOARD_Y = 15;
 
 const SHAPES: number[][][] = [
