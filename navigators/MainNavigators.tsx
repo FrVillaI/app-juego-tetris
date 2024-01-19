@@ -10,6 +10,7 @@ import ListaPuntuacionScreen from "../screens/ListaPuntuacionScreen";
 import PerfilScreen from "../screens/PerfilScreen";
 import { FontAwesome } from '@expo/vector-icons';
 import { AntDesign } from '@expo/vector-icons';
+import ComJueScree from "../screens/ComJueScree";
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -105,7 +106,7 @@ function MyTabs() {
 export default function TopTabNavigator() {
   return (
     <NavigationContainer>
-      <MyStack />
+      <MyStack/>
     </NavigationContainer>
   );
 }

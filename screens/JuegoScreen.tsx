@@ -1,8 +1,10 @@
+// TetrisGames.tsx
 import React, { useEffect, useState } from "react";
 import { AppRegistry, StyleSheet, Text, View, Modal, Button } from "react-native";
 import { TouchableOpacity, GestureHandlerRootView } from "react-native-gesture-handler";
+import { getDatabase, ref, get, update,set  } from 'firebase/database';
 import { db } from "../config/Config";
-import { ref, set, get } from 'firebase/database';
+import { auth } from '../config/Config';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { Fontisto } from '@expo/vector-icons';
 import { FontAwesome } from '@expo/vector-icons';
@@ -10,8 +12,9 @@ import { Entypo } from '@expo/vector-icons';
 import { useFonts } from "expo-font";
 import { Audio } from 'expo-av';
 
+
 const BOARD_X = 10;
-const BOARD_Y = 16;
+const BOARD_Y = 15;
 
 const SHAPES: number[][][] = [
   [[1, 1, 1, 1]],
@@ -204,96 +207,46 @@ class Tetris {
 
 const tetris = new Tetris();
 
-const COLORS = ["green", "blue", "red", "orange", "purple"];
+const COLORS = ["green", "blue", "red", "orange", "purple"]; // Agrega más colores según sea necesario
 
 const TetrisGames: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
-  const [showStartGameModal, setShowStartGameModal] = useState(true);
-  const [userId, setUserId] = useState("");
-  const [userName, setUserName] = useState("");
   const [_, render] = useState({});
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
-  const [musicPlaying, setMusicPlaying] = useState(false);
+  const [puntaje, setpuntaje] = useState(0);
+  const [gameStarted, setGameStarted] = useState(false);
+  const [tetris, setTetris] = useState(new Tetris());
 
-  async function playSound() {
-    if (sound !== null) {
-      if (!musicPlaying) {
-        await sound.playAsync();
-        setMusicPlaying(true);
-      } else {
-        await sound.stopAsync();
-        setMusicPlaying(false);
-      }
-    }
+  const handleStartGame = () => {
+    setGameStarted(true);
+  };
+
+  function writeUserData(score:any) {
+    const db = getDatabase();
+    const user = auth.currentUser;
+    update(ref(db, 'users/' + user?.uid), {
+      score:tetris.score
+  });
+
   }
 
-  const [falling, setFalling] = useState(false);
+
   useEffect(() => {
-    const auth = getAuth();
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        const userId = user.uid;
-        setUserId(userId);
-
-        const userRef = ref(db, `users/${userId}`);
-        get(userRef).then((snapshot) => {
-          if (snapshot.exists()) {
-            const userData = snapshot.val();
-            setUserName(userData.nombre);
-          }
-        });
-
-        const autoFall = () => {
-          tetris.move({ dy: 1 });
-          if (!tetris.gameOver) {
-            setTimeout(autoFall, tetris.fallSpeed);
-          } else {
-            tetris.updateScore(userId, userName);
-            setShowModal(true);
-
-            // Stop the sound when the game is over
-            if (sound) {
-              sound.stopAsync();
-            }
-          }
-        };
-
-        if (falling) {
-          autoFall();
+    if (gameStarted) { // Modificado para ejecutarse solo si el juego ha comenzado
+      const fall = () => {
+        tetris.move({ dy: 1 });
+        render({});
+        if (tetris.gameOver) {
+          setShowModal(true);
+        } else {
+          setpuntaje(tetris.score);
+          writeUserData(puntaje)
+          setTimeout(fall, tetris.fallSpeed);
         }
-      }
-    });
+      };
 
-    const loadSound = async () => {
-      console.log('Loading Sound');
-      const { sound } = await Audio.Sound.createAsync(require('../assets/TeS.mp3'));
-      setSound(sound);
-
-      console.log('Sound loaded');
-    };
-
-
-    return () => unsubscribe();
-  }, [userName, falling]);
-
-  const startFalling = () => {
-    setFalling(true);
-    setShowStartGameModal(false);
-    autoFall(); // Inicia el movimiento automático hacia abajo
-    playSound(); // Inicia la música
-  };
-
-
-  const autoFall = () => {
-    tetris.move({ dy: 1 });
-    render({});
-    if (!tetris.gameOver) {
-      setTimeout(autoFall, tetris.fallSpeed);
-    } else {
-      tetris.updateScore(userId, userName);
-      setShowModal(true);
+      fall();
     }
-  };
+  }, [gameStarted]);
 
   const handleMoveLeft = () => {
     tetris.move({ dx: -1 });
@@ -314,38 +267,21 @@ const TetrisGames: React.FC = () => {
     tetris.increaseFallSpeed();
   };
 
-  const handleRestart = async () => {
+  const handleRestart = () => {
     tetris.gameOver = false;
     tetris.score = 0;
     tetris.board = Array(BOARD_Y).fill("").map(() => Array(BOARD_X).fill(0));
     tetris.generatePiece();
-    tetris.updateScore(userId, userName);
     setShowModal(false);
-    setFalling(false);
     render({});
-    startFalling();
-    await playSound();
   };
 
-  const handleStartGame = async () => {
-    tetris.gameOver = false;
-    tetris.score = 0;
-    tetris.board = Array(BOARD_Y).fill("").map(() => Array(BOARD_X).fill(0));
-    tetris.generatePiece();
-    tetris.updateScore(userId, userName);
-    setShowStartGameModal(false);
-    setFalling(false);
-    render({});
-    
-    // Detener la música con un pequeño retardo
-    if (sound) {
-      await sound.stopAsync();
-      await new Promise(resolve => setTimeout(resolve, 500)); // Ajusta el retardo según sea necesario
-  
-      // Reiniciar la música y comenzar el juego
-      await playSound();
-      startFalling();
-    }
+  const handleRestartGame = () => {
+
+    setGameStarted(false); // Detener el juego
+    setShowModal(false); // Ocultar el modal
+    setTetris(new Tetris()); // Crear una nueva instancia de Tetris
+    render({}); // Forzar la actualización del componente
   };
 
   const cellStyles = (cell: number, y: number) => {
@@ -368,13 +304,12 @@ const TetrisGames: React.FC = () => {
   };
 
   return (
-    <GestureHandlerRootView>
+    <GestureHandlerRootView style={styles.container}>
       <>
-        <Text style={styles.scoreText}>Tetris</Text>
-        <Text style={styles.scoreText}>Score: {tetris.score}</Text>
-        <View>
+        <Text style={styles.title}>Score: {tetris.score}</Text>
+        <View style={styles.board}>
           {tetris.board.map((row, i) => (
-            <View key={i} style={{ flexDirection: "row" }}>
+            <View key={i} style={styles.row}>
               {row.map((cell, j) => (
                 <View key={j} style={cellStyles(cell, i)} />
               ))}
@@ -382,21 +317,24 @@ const TetrisGames: React.FC = () => {
           ))}
         </View>
         <View style={styles.buttonContainer}>
+          <TouchableOpacity onPress={handleStartGame} style={styles.startButton}>
+            <Text>Start</Text>
+          </TouchableOpacity>
           <TouchableOpacity onPress={handleMoveLeft} style={styles.button}>
-            <Text><FontAwesome name="arrow-left" size={24} color="black" /></Text>
+            <Text>🢀</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={handleMoveRight} style={styles.button}>
-            <Text><FontAwesome name="arrow-right" size={24} color="black" /></Text>
+            <Text>🢂</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={handleRotate} style={styles.button}>
-            <Text><Fontisto name="arrow-return-left" size={24} color="black" /></Text>
+            <Text>↻</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={handleFallSpeedUp} style={styles.button}>
-            <Text><Entypo name="arrow-down" size={24} color="black" /></Text>
+            <Text>⏬</Text>
           </TouchableOpacity>
         </View>
 
-
+        {/* Game Over Modal */}
         <Modal
           animationType="slide"
           transparent={true}
@@ -407,22 +345,7 @@ const TetrisGames: React.FC = () => {
             <View style={styles.modalContent}>
               <Text style={styles.gameOverText}>Game Over</Text>
               <Text style={styles.scoreText}>Score: {tetris.score}</Text>
-
-              <Button title="Restart" onPress={handleRestart} />
-            </View>
-          </View>
-        </Modal>
-
-        <Modal
-          animationType="slide"
-          transparent={true}
-          visible={showStartGameModal}
-          onRequestClose={() => setShowStartGameModal(false)}
-        >
-          <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
-              <Text style={styles.gameStartText}>¡Empezar Juego!</Text>
-              <Button title="Comenzar" onPress={startFalling} />
+              <Button title="Restart" onPress={handleRestartGame} />
             </View>
           </View>
         </Modal>
@@ -432,12 +355,39 @@ const TetrisGames: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#f0f0f0",
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginTop: 20,
+  },
+  score: {
+    fontSize: 18,
+    textAlign: "center",
+    marginTop: 10,
+  },
+  board: {
+    marginVertical: 10,
+  },
+  row: {
+    flexDirection: "row",
+  },
   buttonContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
     marginTop: 10,
   },
   button: {
+    backgroundColor: "lightblue",
+    padding: 10,
+    borderRadius: 5,
+  },
+  startButton: {
+    backgroundColor: "lightgreen",
     padding: 10,
     borderRadius: 5,
   },
@@ -452,14 +402,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   scoreText: {
-    fontSize: 24, // Tamaño más grande
-    fontWeight: "bold", // Negrita
-    textAlign: 'center',
-  },
-  gameStartText: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 10,
+    fontSize: 18,
   },
   modalContainer: {
     flex: 1,
