@@ -4,7 +4,7 @@ import { ref, onValue } from "firebase/database";
 import { db } from "../config/Config";
 
 interface Score {
-  userName: string;
+  nick: string;
   score: number;
 }
 
@@ -12,14 +12,14 @@ const ListaPuntuacionScreen: React.FC = () => {
   const [scores, setScores] = useState<Score[]>([]);
 
   useEffect(() => {
-    const scoresRef = ref(db, "scores");
+    const scoresRef = ref(db, "users");
 
     const unsubscribe = onValue(scoresRef, (snapshot) => {
       const scoresData: Score[] = [];
       snapshot.forEach((childSnapshot) => {
         const data = childSnapshot.val();
         scoresData.push({
-          userName: data.userName,
+          nick: data.nick,
           score: data.score,
         });
       });
@@ -34,7 +34,7 @@ const ListaPuntuacionScreen: React.FC = () => {
 
   const renderItem = ({ item }: { item: Score }) => (
     <View style={styles.itemContainer}>
-      <Text style={styles.userName}>📌 {item.userName}</Text>
+      <Text style={styles.userName}>📌 {item.nick}</Text>
       <Text style={styles.score}>{item.score}</Text>
     </View>
   );
@@ -53,7 +53,7 @@ const ListaPuntuacionScreen: React.FC = () => {
       <FlatList
         data={scores}
         renderItem={renderItem}
-        keyExtractor={(item) => item.userName}
+        keyExtractor={(item) => item.nick}
       />
     </View>
   );
