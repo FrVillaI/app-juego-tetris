@@ -1,8 +1,7 @@
-// TetrisGames.tsx
 import React, { useEffect, useState } from "react";
 import { AppRegistry, StyleSheet, Text, View, Modal, Button } from "react-native";
 import { TouchableOpacity, GestureHandlerRootView } from "react-native-gesture-handler";
-import { getDatabase, ref, get, update,set  } from 'firebase/database';
+import { getDatabase, ref, get, update, set } from 'firebase/database';
 import { db } from "../config/Config";
 import { auth } from '../config/Config';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
@@ -12,8 +11,12 @@ import { Entypo } from '@expo/vector-icons';
 import { useFonts } from "expo-font";
 import { Audio } from 'expo-av';
 
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { faPlay, faArrowLeft, faArrowRight, faUndoAlt, faArrowDown } from '@fortawesome/free-solid-svg-icons';
 
-const BOARD_X = 7;
+
+
+const BOARD_X = 8;
 const BOARD_Y = 15;
 
 const SHAPES: number[][][] = [
@@ -220,12 +223,12 @@ const TetrisGames: React.FC = () => {
     setGameStarted(true);
   };
 
-  function writeUserData(score:any) {
+  function writeUserData(score: any) {
     const db = getDatabase();
     const user = auth.currentUser;
     update(ref(db, 'users/' + user?.uid), {
-      score:tetris.score
-  });
+      score: tetris.score
+    });
 
   }
 
@@ -284,10 +287,12 @@ const TetrisGames: React.FC = () => {
     render({}); // Forzar la actualización del componente
   };
 
+
   const cellStyles = (cell: number, y: number) => {
     let backgroundColor;
     if (cell === 1) {
-      backgroundColor = "silver";
+
+      backgroundColor = COLORS[y % COLORS.length];
     } else if (cell === 2) {
       backgroundColor = COLORS[y % COLORS.length];
     } else {
@@ -318,19 +323,19 @@ const TetrisGames: React.FC = () => {
         </View>
         <View style={styles.buttonContainer}>
           <TouchableOpacity onPress={handleStartGame} style={styles.startButton}>
-            <Text>Start</Text>
+            <Text style={styles.startButtonText}>Start</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={handleMoveLeft} style={styles.button}>
-            <Text>🢀</Text>
+            <FontAwesomeIcon icon={faArrowLeft} size={30} />
           </TouchableOpacity>
           <TouchableOpacity onPress={handleMoveRight} style={styles.button}>
-            <Text>🢂</Text>
+            <FontAwesomeIcon icon={faArrowRight} size={30} />
           </TouchableOpacity>
           <TouchableOpacity onPress={handleRotate} style={styles.button}>
-            <Text>↻</Text>
+            <FontAwesomeIcon icon={faUndoAlt} size={30} />
           </TouchableOpacity>
           <TouchableOpacity onPress={handleFallSpeedUp} style={styles.button}>
-            <Text>⏬</Text>
+            <FontAwesomeIcon icon={faArrowDown} size={30} />
           </TouchableOpacity>
         </View>
 
@@ -353,17 +358,18 @@ const TetrisGames: React.FC = () => {
     </GestureHandlerRootView>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#000000",
+    justifyContent: "center", // Centrar verticalmente
+    alignItems: "center",
   },
   title: {
     fontSize: 24,
     fontWeight: "bold",
     textAlign: "center",
-    marginTop: 20, 
+    marginTop: 20,
     color: "#FFFFFF"
   },
   score: {
@@ -384,13 +390,22 @@ const styles = StyleSheet.create({
   },
   button: {
     backgroundColor: "lightblue",
-    padding: 10,
-    borderRadius: 5,
+    padding: 15,
+    borderRadius: 10,
+    marginHorizontal: 10,
+  },
+  buttonText: {
+    fontSize: 20,
   },
   startButton: {
     backgroundColor: "lightgreen",
-    padding: 10,
-    borderRadius: 5,
+    padding: 15,
+    borderRadius: 10,
+    marginHorizontal: 10,
+  },
+  startButtonText: {
+    color: 'white',
+    fontSize: 20,
   },
   gameOverContainer: {
     flex: 1,
@@ -404,7 +419,7 @@ const styles = StyleSheet.create({
   },
   scoreText: {
     fontSize: 18,
-    color:"grean"
+    color: "green"
   },
   modalContainer: {
     flex: 1,
