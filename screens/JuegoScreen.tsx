@@ -208,8 +208,6 @@ class Tetris {
   }
 }
 
-const tetris = new Tetris();
-
 const COLORS = ["green", "blue", "red", "orange", "purple"]; // Agrega más colores según sea necesario
 
 const TetrisGames: React.FC = () => {
@@ -322,9 +320,12 @@ const TetrisGames: React.FC = () => {
           ))}
         </View>
         <View style={styles.buttonContainer}>
-          <TouchableOpacity onPress={handleStartGame} style={styles.startButton}>
-            <Text style={styles.startButtonText}>Start</Text>
-          </TouchableOpacity>
+          {!gameStarted && ( // Renderiza el botón "Start" solo si el juego no ha comenzado
+            <TouchableOpacity onPress={handleStartGame} style={styles.startButton}>
+              <Text style={styles.startButtonText}>Start</Text>
+            </TouchableOpacity>
+          )}
+          {/* Resto de los botones */}
           <TouchableOpacity onPress={handleMoveLeft} style={styles.button}>
             <FontAwesomeIcon icon={faArrowLeft} size={30} />
           </TouchableOpacity>
