@@ -62,10 +62,10 @@ function MyTabs() {
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: 'blue',
-        tabBarInactiveTintColor: 'gray',
+        tabBarActiveTintColor: '#7CBA45',
+        tabBarInactiveTintColor: '#45BAAF',
         tabBarStyle: {
-          backgroundColor: 'white',
+          backgroundColor: '#000000',
         },
         tabBarLabelStyle: {
           fontWeight: 'bold',
@@ -77,7 +77,7 @@ function MyTabs() {
         component={JuegoScreen}
         options={{
           tabBarIcon: () => (
-            <FontAwesome name="puzzle-piece" size={24} color="black" />
+            <FontAwesome name="puzzle-piece" size={24} color="#F0EAD6" />
           ),
         }}
       />
@@ -86,7 +86,7 @@ function MyTabs() {
         component={ListaPuntuacionScreen}
         options={{
           tabBarIcon: () => (
-            <AntDesign name="aliwangwang" size={24} color="black" />
+            <AntDesign name="aliwangwang" size={24} color="#F0EAD6" />
           ),
         }}
       />
@@ -95,7 +95,7 @@ function MyTabs() {
         component={PerfilScreen}
         options={{
           tabBarIcon: () => (
-            <FontAwesome name="pied-piper-pp" size={24} color="black" />
+            <FontAwesome name="pied-piper-pp" size={24} color="#F0EAD6" />
           ),
         }}
       />
@@ -106,7 +106,7 @@ function MyTabs() {
 export default function TopTabNavigator() {
   return (
     <NavigationContainer>
-      <MyTabs/>
+      <MyStack/>
     </NavigationContainer>
   );
 }

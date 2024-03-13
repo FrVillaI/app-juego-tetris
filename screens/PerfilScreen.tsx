@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput,TouchableOpacity,StyleSheet,Alert,ImageBackground,Modal,Image,} from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ImageBackground, Modal, Image, } from 'react-native';
 import { getDatabase, ref, get, update } from 'firebase/database';
 import { auth } from '../config/Config';
 import { getAuth, signOut, updateProfile as updateProfileAuth } from 'firebase/auth';
@@ -9,6 +9,7 @@ import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage
 import { LogBox } from 'react-native';
 import { Fontisto } from '@expo/vector-icons';
 import { FontAwesome } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 LogBox.ignoreAllLogs(true);
 
 const backgroundImage = require('../assets/fongoPe.jpg');
@@ -23,26 +24,41 @@ export default function PerfilScreen({ navigation }: any) {
   const [image, setImagen] = useState('');
   const [cameraImage, setCameraImage] = useState('');
 
-  useEffect(() => {
-    const db = getDatabase();
-    const user = auth.currentUser;
+  const [userProfilePicture, setUserProfilePicture] = useState('');
 
-    if (user) {
-      const userRef = ref(db, `users/${user.uid}`);
-      get(userRef)
-        .then((snapshot) => {
-          if (snapshot.exists()) {
-            const userData = snapshot.val();
-            setNick(userData.nick);
-            setCorreo(userData.correo);
-            setEdad(userData.edad);
-            setNombre(userData.nombre);
-          }
-        })
-        .catch((error) => {
-          console.error('Error fetching user data:', error);
-        });
-    }
+  useEffect(() => {
+    const fetchData = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        const storedImageURL = await AsyncStorage.getItem(`profilePictureURL_${user.uid}`);
+
+        if (storedImageURL) {
+          setUserProfilePicture(storedImageURL);
+        }
+
+        const db = getDatabase();
+        const userRef = ref(db, `users/${user.uid}`);
+
+        get(userRef)
+          .then((snapshot) => {
+            if (snapshot.exists()) {
+              const userData = snapshot.val();
+              setNick(userData.nick);
+              setCorreo(userData.correo);
+              setEdad(userData.edad);
+              setNombre(userData.nombre);
+
+              // Set the profile picture URL for the current user
+              setUserProfilePicture(userData.profilePicture || storedImageURL || '');
+            }
+          })
+          .catch((error) => {
+            console.error('Error fetching user data:', error);
+          });
+      }
+    };
+
+    fetchData();
   }, []);
 
   const pickImage = async () => {
@@ -96,8 +112,9 @@ export default function PerfilScreen({ navigation }: any) {
       { cancelable: true }
     );
   };
+
   async function subirImagen(nombre: string) {
-    const storageReference = storageRef(storage, `usuarios/${auth.currentUser?.uid}_${nombre}`);
+    const storageReference = storageRef(storage, `usuarios/${auth.currentUser?.uid}/${auth.currentUser?.uid}_${nombre}`);
     const source = cameraImage || image;
 
     try {
@@ -109,17 +126,29 @@ export default function PerfilScreen({ navigation }: any) {
       });
 
       console.log('La imagen se subió con éxito');
-    const photoURL = await getDownloadURL(storageReference);
+      const photoURL = await getDownloadURL(storageReference);
 
-    Alert.alert('Éxito', 'Imagen cargada correctamente');
+      // Almacenar la URL localmente with user UID appended
+      await AsyncStorage.setItem(`profilePictureURL_${auth.currentUser?.uid}`, photoURL);
 
-    return photoURL;
-  } catch (error) {
-    console.error(error);
-    
-    return null;
+      // Actualizar la URL de la imagen en la base de datos
+      const db = getDatabase();
+      const user = auth.currentUser;
+      if (user) {
+        const userRef = ref(db, `users/${user.uid}`);
+        update(userRef, { profilePicture: photoURL });
+      }
+
+      Alert.alert('Éxito', 'Imagen cargada correctamente');
+
+      return photoURL;
+    } catch (error) {
+      console.error(error);
+
+      return null;
+    }
   }
-}
+
 
   function cerrarSesion() {
     const auth = getAuth();
@@ -140,7 +169,13 @@ export default function PerfilScreen({ navigation }: any) {
       const userRef = ref(db, `users/${user.uid}`);
 
       subirImagen('Avatar1').then((photoURL) => {
-        update(userRef, { edad, nombre, nick, correo })
+        update(userRef, {
+          edad: edad,
+          nombre: nombre,
+          nick: nick,
+          correo: correo,
+          profilePicture: photoURL // Actualizar la URL de la imagen de perfil
+        })
           .then(() => {
             setModalVisible(false);
             Alert.alert('Éxito', 'Perfil actualizado correctamente');
@@ -163,44 +198,47 @@ export default function PerfilScreen({ navigation }: any) {
     }
   }
 
+
   return (
     <ImageBackground source={backgroundImage} style={styles.backgroundImage}>
       <View style={styles.container}>
         <Text style={styles.title}>Perfil de Usuario</Text>
         <View style={styles.imageContainer}>
           <TouchableOpacity onPress={pickImageOrTakePhoto}>
-            {cameraImage || image ? (
-              <Image source={{ uri: cameraImage || image }} style={styles.circularImage} />
+            {cameraImage || image || userProfilePicture ? (
+              <Image source={{ uri: cameraImage || image || userProfilePicture }} style={styles.circularImage} />
             ) : (
               <View style={styles.circularPlaceholder}>
                 <Fontisto name="person" size={40} color="black" />
               </View>
             )}
+
           </TouchableOpacity>
+
           {/* Agregar el ícono de la cámara a la derecha de la imagen */}
           <TouchableOpacity style={styles.cameraIconContainer} onPress={takePhoto}>
             <FontAwesome name="camera" size={24} color="white" />
           </TouchableOpacity>
         </View>
-      
-  
+
+
         <View style={styles.infoContainer}>
           <Text style={styles.label}>Nombre: {nombre}</Text>
           <Text style={styles.label}>Nick: {nick}</Text>
           <Text style={styles.label}>Correo: {correo}</Text>
           <Text style={styles.label}>Edad: {edad}</Text>
         </View>
-  
+
         <TouchableOpacity style={styles.button} onPress={() => setModalVisible(true)}>
           <Text style={styles.buttonText}>Editar</Text>
         </TouchableOpacity>
-  
+
         <View style={styles.infoContainer} />
-  
+
         <TouchableOpacity style={styles.buttonDel} onPress={cerrarSesion}>
           <Text style={styles.buttonTextDel}>Cerrar Sesión</Text>
         </TouchableOpacity>
-  
+
         <Modal
           animationType="slide"
           transparent={true}
@@ -225,9 +263,9 @@ export default function PerfilScreen({ navigation }: any) {
               <TouchableOpacity style={styles.button} onPress={updateProfile}>
                 <Text style={styles.buttonText}>Actualizar</Text>
               </TouchableOpacity>
-  
+
               <View style={styles.infoContainer} />
-  
+
               <TouchableOpacity style={styles.buttonDel} onPress={() => setModalVisible(false)}>
                 <Text style={styles.buttonTextDel}>Cancelar</Text>
               </TouchableOpacity>
@@ -237,7 +275,7 @@ export default function PerfilScreen({ navigation }: any) {
       </View>
     </ImageBackground>
   );
-          }
+}
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -259,10 +297,10 @@ const styles = StyleSheet.create({
     width: 150,
     height: 150,
     borderRadius: 75,
-    backgroundColor: '#c7c6c2', 
+    backgroundColor: '#c7c6c2',
     marginVertical: 20,
-  justifyContent: 'center',
-  alignItems: 'center',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   modalContainer: {
     flex: 1,

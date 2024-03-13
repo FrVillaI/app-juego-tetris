@@ -13,7 +13,7 @@ import { useFonts } from "expo-font";
 import { Audio } from 'expo-av';
 
 
-const BOARD_X = 8;
+const BOARD_X = 7;
 const BOARD_Y = 15;
 
 const SHAPES: number[][][] = [
@@ -357,13 +357,14 @@ const TetrisGames: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f0f0f0",
+    backgroundColor: "#000000",
   },
   title: {
     fontSize: 24,
     fontWeight: "bold",
     textAlign: "center",
-    marginTop: 20,
+    marginTop: 20, 
+    color: "#FFFFFF"
   },
   score: {
     fontSize: 18,
@@ -403,6 +404,7 @@ const styles = StyleSheet.create({
   },
   scoreText: {
     fontSize: 18,
+    color:"grean"
   },
   modalContainer: {
     flex: 1,
