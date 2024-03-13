@@ -46,11 +46,17 @@ const ListaPuntuacionScreen: React.FC = () => {
     };
   };
 
+  const getRandomColor = () => {
+    const colors = ["#1DFAE7","#00FF76" ,"#FFE000", "#FF0000", "#FF00CA"];
+    const randomIndex = Math.floor(Math.random() * colors.length);
+    return colors[randomIndex];
+  };
+
   const renderItem = ({ item, index }: { item: Score; index: number }) => (
     <View style={styles.itemContainer}>
-      <Text style={styles.rank}>{index + 1}</Text>
-      <Text style={styles.userName}>{item.nick}</Text>
-      <Text style={styles.score}>{item.score}</Text>
+      <Text style={[styles.rank, {color: getRandomColor()}]}>{index + 1}</Text>
+      <Text style={[styles.userName, {color: getRandomColor()}]}>{item.nick}</Text>
+      <Text style={[styles.score, {color: getRandomColor()}]}>{item.score}</Text>
     </View>
   );
 
@@ -60,7 +66,7 @@ const ListaPuntuacionScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>TOTAL SCORE RANKING</Text>
+      <Text style={styles.title}>SCORE RANKING</Text>
       <FlatList
         data={scores}
         renderItem={renderItem}
@@ -103,17 +109,14 @@ const styles = StyleSheet.create({
   },
   rank: {
     fontSize: 18,
-    color: "#FFFFFF",
     fontFamily: 'TetrisFont',
   },
   userName: {
     fontSize: 18,
-    color: "#FFFFFF",
     fontFamily: 'TetrisFont',
   },
   score: {
     fontSize: 18,
-    color: "#FFFFFF",
     fontFamily: 'TetrisFont',
   },
   headerContainer: {

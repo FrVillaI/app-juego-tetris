@@ -2,8 +2,6 @@ import { Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'reac
 import React from 'react'
 import { useNavigation } from '@react-navigation/native';
 
-
-
 const backgroundImage = require('../assets/fondo_tetris.jpg');
 const logoImage = require('../assets/logo.png');
 
