@@ -1,19 +1,17 @@
 import React, { useEffect, useState } from "react";
-import { AppRegistry, StyleSheet, Text, View, Modal, Button } from "react-native";
+import { AppRegistry, StyleSheet, Text, View, Modal, Button, Image } from "react-native";
 import { TouchableOpacity, GestureHandlerRootView } from "react-native-gesture-handler";
-import { getDatabase, ref, get, update, set } from 'firebase/database';
+import { getDatabase, ref, update, set } from 'firebase/database';
 import { db } from "../config/Config";
 import { auth } from '../config/Config';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { getAuth } from 'firebase/auth';
 import { Fontisto } from '@expo/vector-icons';
 import { FontAwesome } from '@expo/vector-icons';
 import { Entypo } from '@expo/vector-icons';
 import { useFonts } from "expo-font";
 import { Audio } from 'expo-av';
-
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faPlay, faArrowLeft, faArrowRight, faUndoAlt, faArrowDown } from '@fortawesome/free-solid-svg-icons';
-
 
 
 const BOARD_X = 8;
@@ -208,7 +206,7 @@ class Tetris {
   }
 }
 
-const COLORS = ["green", "blue", "red", "orange", "purple"]; // Agrega más colores según sea necesario
+const COLORS = ["green", "blue", "red", "orange", "purple"];
 
 const TetrisGames: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
@@ -216,28 +214,44 @@ const TetrisGames: React.FC = () => {
   const [puntaje, setpuntaje] = useState(0);
   const [gameStarted, setGameStarted] = useState(false);
   const [tetris, setTetris] = useState(new Tetris());
-
-  const handleStartGame = () => {
-    setGameStarted(true);
-  };
-
-  function writeUserData(score: any) {
-    const db = getDatabase();
-    const user = auth.currentUser;
-    update(ref(db, 'users/' + user?.uid), {
-      score: tetris.score
-    });
-
-  }
-
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
 
   useEffect(() => {
-    if (gameStarted) { // Modificado para ejecutarse solo si el juego ha comenzado
-      const fall = () => {
+    (async () => {
+      const { sound } = await Audio.Sound.createAsync(
+        require('../assets/audio/TeS.mp3')
+      );
+      setSound(sound);
+    })();
+  }, []);
+
+  const handleStartGame = async () => {
+    setGameStarted(true);
+    if (sound) {
+      await sound.playAsync();
+    }
+  };
+
+  const handleRestartGame = async () => {
+    setGameStarted(false);
+    setShowModal(false);
+    setTetris(new Tetris());
+    render({});
+    if (sound) {
+      await sound.stopAsync();
+    }
+  };
+
+  useEffect(() => {
+    if (gameStarted) {
+      const fall = async () => {
         tetris.move({ dy: 1 });
         render({});
         if (tetris.gameOver) {
           setShowModal(true);
+          if (sound) {
+            await sound.stopAsync();
+          }
         } else {
           setpuntaje(tetris.score);
           writeUserData(puntaje)
@@ -277,26 +291,24 @@ const TetrisGames: React.FC = () => {
     render({});
   };
 
-  const handleRestartGame = () => {
-
-    setGameStarted(false); // Detener el juego
-    setShowModal(false); // Ocultar el modal
-    setTetris(new Tetris()); // Crear una nueva instancia de Tetris
-    render({}); // Forzar la actualización del componente
-  };
-
+  function writeUserData(score:any) {
+    const db = getDatabase();
+    const user = auth.currentUser;
+    update(ref(db, 'users/' + user?.uid), {
+      score:tetris.score
+    });
+  }
 
   const cellStyles = (cell: number, y: number) => {
     let backgroundColor;
     if (cell === 1) {
-
       backgroundColor = COLORS[y % COLORS.length];
     } else if (cell === 2) {
       backgroundColor = COLORS[y % COLORS.length];
     } else {
       backgroundColor = "black";
     }
-
+  
     return {
       width: 40,
       height: 40,
@@ -309,7 +321,15 @@ const TetrisGames: React.FC = () => {
   return (
     <GestureHandlerRootView style={styles.container}>
       <>
+        <View style={styles.logoContainer}>
+          <Image
+            source={require('../assets/images/Unlogo-general-grande.inti.png' )}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+        </View>
         <Text style={styles.title}>Score: {tetris.score}</Text>
+
         <View style={styles.board}>
           {tetris.board.map((row, i) => (
             <View key={i} style={styles.row}>
@@ -320,12 +340,11 @@ const TetrisGames: React.FC = () => {
           ))}
         </View>
         <View style={styles.buttonContainer}>
-          {!gameStarted && ( // Renderiza el botón "Start" solo si el juego no ha comenzado
+          {!gameStarted && (
             <TouchableOpacity onPress={handleStartGame} style={styles.startButton}>
               <Text style={styles.startButtonText}>Start</Text>
             </TouchableOpacity>
           )}
-          {/* Resto de los botones */}
           <TouchableOpacity onPress={handleMoveLeft} style={styles.button}>
             <FontAwesomeIcon icon={faArrowLeft} size={30} />
           </TouchableOpacity>
@@ -340,7 +359,6 @@ const TetrisGames: React.FC = () => {
           </TouchableOpacity>
         </View>
 
-        {/* Game Over Modal */}
         <Modal
           animationType="slide"
           transparent={true}
@@ -359,80 +377,89 @@ const TetrisGames: React.FC = () => {
     </GestureHandlerRootView>
   );
 };
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#000000",
-    justifyContent: "center", // Centrar verticalmente
+const styles = StyleSheet.create({ 
+  container: { 
+    flex: 1, 
+    backgroundColor: "#000000", 
+    justifyContent: "center", 
     alignItems: "center",
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    textAlign: "center",
-    marginTop: 20,
-    color: "#FFFFFF"
-  },
-  score: {
-    fontSize: 18,
-    textAlign: "center",
-    marginTop: 10,
-  },
-  board: {
-    marginVertical: 10,
-  },
-  row: {
-    flexDirection: "row",
-  },
-  buttonContainer: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    marginTop: 10,
-  },
-  button: {
-    backgroundColor: "lightblue",
-    padding: 15,
-    borderRadius: 10,
+  }, 
+  title: { 
+    fontSize: 24, 
+    fontWeight: "bold", 
+    textAlign: "center", 
+    marginTop: 20,  
+    color: "#FFFFFF" 
+  }, 
+  board: { 
+    marginVertical: 10, 
+  }, 
+  row: { 
+    flexDirection: "row", 
+  }, 
+  buttonContainer: { 
+    flexDirection: "row", 
+    justifyContent: "space-around", 
+    marginTop: 10, 
+  }, 
+  button: { 
+    backgroundColor: "lightblue", 
+    padding: 15, 
+    borderRadius: 10, 
     marginHorizontal: 10,
-  },
+  }, 
   buttonText: {
     fontSize: 20,
   },
-  startButton: {
-    backgroundColor: "lightgreen",
-    padding: 15,
-    borderRadius: 10,
+  startButton: { 
+    backgroundColor: "lightgreen", 
+    padding: 15, 
+    borderRadius: 10, 
     marginHorizontal: 10,
-  },
+  }, 
   startButtonText: {
     color: 'white',
     fontSize: 20,
   },
-  gameOverContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+  gameOverContainer: { 
+    flex: 1, 
+    justifyContent: "center", 
+    alignItems: "center", 
+  }, 
+  gameOverText: { 
+    fontSize: 24, 
+    fontWeight: "bold", 
+    marginBottom: 10, 
+  }, 
+  scoreText: { 
+    fontSize: 18, 
+    color:"green" 
+  }, 
+  modalContainer: { 
+    flex: 1, 
+    justifyContent: "center", 
+    alignItems: "center", 
+    backgroundColor: "rgba(0, 0, 0, 0.5)", 
+  }, 
+  modalContent: { 
+    backgroundColor: "white", 
+    padding: 20, 
+    borderRadius: 10, 
+    alignItems: "center", 
   },
-  gameOverText: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 10,
+  logoContainer: {
+    position: 'absolute',
+    left: 10,
+    top: 20,
   },
-  scoreText: {
-    fontSize: 18,
-    color: "green"
+  logoContainerRight: {
+    position: 'absolute',
+    right: 10,
+    top: 20,
   },
-  modalContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-  },
-  modalContent: {
-    backgroundColor: "white",
-    padding: 20,
-    borderRadius: 10,
-    alignItems: "center",
+  logo: {
+    width: 120,
+    height: 100,
   },
 });
 

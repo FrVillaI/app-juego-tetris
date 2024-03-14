@@ -2,9 +2,21 @@ import React, { useState } from 'react';
 import { Alert, StyleSheet, Text, View, TextInput, ImageBackground, Image, TouchableOpacity } from 'react-native';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../config/Config';
+import * as Font from 'expo-font';
 
 const backgroundImage = require('../assets/fondo_tetris.jpg');
 const logoImage = require('../assets/logo.png');
+const fetchFonts = async () => {
+  try {
+    await Font.loadAsync({
+      'Pixel Emulator Font': require('../assets/fonts/PixelEmulator-xq08.ttf'),
+    });
+
+    console.log('Font loaded successfully');
+  } catch (error) {
+    console.log('Error loading font', error);
+  }
+};
 
 export default function LoginScreen({ navigation }: any) {
   const [correo, setCorreo] = useState('');
@@ -93,10 +105,11 @@ const styles = StyleSheet.create({
   },
   title: {
     marginTop: 100,
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 30,
+    fontFamily: 'Pixel Emulator Font',
     marginBottom: 25,
-    color: '#ffffff',
+    color: 'white',
+    justifyContent: 'center',
   },
   backgroundImage: {
     flex: 1,

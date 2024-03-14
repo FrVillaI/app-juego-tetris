@@ -11,7 +11,11 @@ import { Fontisto } from '@expo/vector-icons';
 import { FontAwesome } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 LogBox.ignoreAllLogs(true);
+import * as Font from 'expo-font';
 
+Font.loadAsync({
+  'OLD SPORT ATHLETIC Font': require('../assets/fonts/OldSport02AthleticNcv-E0gj.ttf'),
+});
 const backgroundImage = require('../assets/fongoPe.jpg');
 const backgroundModalImage = require('../assets/fondoP.jpg');
 
@@ -202,7 +206,7 @@ export default function PerfilScreen({ navigation }: any) {
   return (
     <ImageBackground source={backgroundImage} style={styles.backgroundImage}>
       <View style={styles.container}>
-        <Text style={styles.title}>Perfil de Usuario</Text>
+        <Text style={styles.title}>PERFIL DE USUARIO</Text>
         <View style={styles.imageContainer}>
           <TouchableOpacity onPress={pickImageOrTakePhoto}>
             {cameraImage || image || userProfilePicture ? (
@@ -223,20 +227,20 @@ export default function PerfilScreen({ navigation }: any) {
 
 
         <View style={styles.infoContainer}>
-          <Text style={styles.label}>Nombre: {nombre}</Text>
-          <Text style={styles.label}>Nick: {nick}</Text>
-          <Text style={styles.label}>Correo: {correo}</Text>
-          <Text style={styles.label}>Edad: {edad}</Text>
+          <Text style={styles.label}>NOMBRE :  {nombre}</Text>
+          <Text style={styles.label}>NICK :   {nick}</Text>
+          <Text style={styles.label}>CORREO : {correo}</Text>
+          <Text style={styles.label}>EDAD :  {edad}</Text>
         </View>
 
         <TouchableOpacity style={styles.button} onPress={() => setModalVisible(true)}>
-          <Text style={styles.buttonText}>Editar</Text>
+          <Text style={styles.buttonText}>EDITAR</Text>
         </TouchableOpacity>
 
         <View style={styles.infoContainer} />
 
         <TouchableOpacity style={styles.buttonDel} onPress={cerrarSesion}>
-          <Text style={styles.buttonTextDel}>Cerrar Sesión</Text>
+          <Text style={styles.buttonTextDel}>CERRAR SECICIÓN</Text>
         </TouchableOpacity>
 
         <Modal
@@ -247,7 +251,7 @@ export default function PerfilScreen({ navigation }: any) {
         >
           <ImageBackground source={backgroundModalImage} style={styles.backgroundImage}>
             <View style={styles.modalContainer}>
-              <Text style={styles.title}>Actualizar Datos</Text>
+              <Text style={styles.title}>ACTUALIZAR  DATOS</Text>
               <TextInput
                 style={styles.input}
                 placeholder="Nuevo Nombre"
@@ -261,13 +265,13 @@ export default function PerfilScreen({ navigation }: any) {
                 onChangeText={(texto) => setEdad(texto)}
               />
               <TouchableOpacity style={styles.button} onPress={updateProfile}>
-                <Text style={styles.buttonText}>Actualizar</Text>
+                <Text style={styles.buttonText}>ACTUALIZAR</Text>
               </TouchableOpacity>
 
               <View style={styles.infoContainer} />
 
               <TouchableOpacity style={styles.buttonDel} onPress={() => setModalVisible(false)}>
-                <Text style={styles.buttonTextDel}>Cancelar</Text>
+                <Text style={styles.buttonTextDel}>CANCELAR</Text>
               </TouchableOpacity>
             </View>
           </ImageBackground>
@@ -310,13 +314,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   title: {
-    fontSize: 24,
+    fontSize: 25,
     marginBottom: 20,
-    fontWeight: 'bold',
-    color: '#ffffff',
+   
+    fontFamily: 'OLD SPORT ATHLETIC Font',
+    color: 'white',
   },
   infoContainer: {
-    marginBottom: 20,
+    marginBottom: 22,
+   
+ 
   },
   label: {
     fontSize: 16,
@@ -324,7 +331,8 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     paddingHorizontal: 10,
     borderRadius: 10,
-    color: '#ffffff',
+    color: 'white',
+    fontFamily: 'OLD SPORT ATHLETIC Font',
   },
   input: {
     height: 40,
@@ -339,7 +347,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   button: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#92fa7a',
     paddingVertical: 15,
     paddingHorizontal: 20,
     borderRadius: 5,
@@ -347,15 +355,17 @@ const styles = StyleSheet.create({
     width: '80%',
     alignItems: 'center',
     justifyContent: 'center',
+  
   },
   buttonText: {
-    color: 'black',
-    fontSize: 16,
+  
+    fontSize: 22,
     textAlign: 'center',
-    fontWeight: 'bold',
+    color: '#000000',
+    fontFamily: 'OLD SPORT ATHLETIC Font',
   },
   buttonDel: {
-    backgroundColor: 'red',
+    backgroundColor: '#ff334b',
     paddingVertical: 15,
     paddingHorizontal: 20,
     borderRadius: 5,
@@ -363,12 +373,13 @@ const styles = StyleSheet.create({
     width: '80%',
     alignItems: 'center',
     justifyContent: 'center',
+    
   },
   buttonTextDel: {
-    color: 'white',
-    fontSize: 16,
+    color: '#000000',
+    fontSize: 22,
     textAlign: 'center',
-    fontWeight: 'bold',
+    fontFamily: 'OLD SPORT ATHLETIC Font',
   },
   backgroundImage: {
     flex: 1,
@@ -390,7 +401,7 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 20,
     textAlign: 'center',
-    fontWeight: 'bold',
+    
     marginTop: 20,
   },
   img: {

@@ -1,13 +1,23 @@
 import React, { useState } from 'react';
-import { Alert, StyleSheet, Text, View, TextInput, ImageBackground, Image, ScrollView } from 'react-native';
+import { Alert, StyleSheet, Text, View, TextInput, ImageBackground, Image } from 'react-native';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { getDatabase, ref, set, child, get } from 'firebase/database';
 import { auth } from '../config/Config';
 import { TouchableOpacity } from 'react-native-gesture-handler';
-
+import * as Font from 'expo-font';
 const backgroundImage = require('../assets/fondo_tetris.jpg');
 const logoImage = require('../assets/logo.png');
+const fetchFonts = async () => {
+  try {
+    await Font.loadAsync({
+      'Pixel Emulator Font': require('../assets/fonts/PixelEmulator-xq08.ttf'),
+    });
 
+    console.log('Font loaded successfully');
+  } catch (error) {
+    console.log('Error loading font', error);
+  }
+};
 export default function RegistroScreen({ navigation }: any) {
   const [correo, setCorreo] = useState('');
   const [contrasenia, setContrasenia] = useState('');
@@ -91,73 +101,67 @@ export default function RegistroScreen({ navigation }: any) {
       source={backgroundImage}
       style={styles.backgroundImage}
     >
-      <ScrollView contentContainerStyle={styles.scrollView}>
-        <View style={styles.container}>
-          <Text style={styles.title}>Registro</Text>
-          <Image source={logoImage} style={styles.logoImage} />
+      <View style={styles.container}>
+        <Text style={styles.title}>Registro</Text>
+        <Image source={logoImage} style={styles.logoImage} />
 
+        <TextInput
+          style={styles.input}
+          placeholder='Ingresa tu Nombre'
+          onChangeText={(texto) => setNombre(texto)}
+          value={nombre}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder='Ingresar tu Nick'
+          onChangeText={(texto) => setNick(texto)}
+          value={nick}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder='Ingresa tu Email'
+          keyboardType='email-address'
+          onChangeText={(texto) => setCorreo(texto)}
+          value={correo}
+        />
+        <View style={styles.passwordContainer}>
           <TextInput
-            style={styles.input}
-            placeholder='Ingresa tu Nombre'
-            onChangeText={(texto) => setNombre(texto)}
-            value={nombre}
+            style={styles.inputPassword}
+            placeholder='Ingresa tu Contraseña'
+            onChangeText={(texto) => setContrasenia(texto)}
+            value={contrasenia}
+            secureTextEntry={!mostrarContrasenia}
           />
-          <TextInput
-            style={styles.input}
-            placeholder='Ingresar tu Nick'
-            onChangeText={(texto) => setNick(texto)}
-            value={nick}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder='Ingresa tu Email'
-            keyboardType='email-address'
-            onChangeText={(texto) => setCorreo(texto)}
-            value={correo}
-          />
-          <View style={styles.passwordContainer}>
-            <TextInput
-              style={styles.inputPassword}
-              placeholder='Ingresa tu Contraseña'
-              onChangeText={(texto) => setContrasenia(texto)}
-              value={contrasenia}
-              secureTextEntry={!mostrarContrasenia}
-            />
-            <TouchableOpacity
-              onPress={() => setMostrarContrasenia(!mostrarContrasenia)}
-              style={styles.showPasswordIcon}
-            >
-              <Text style={styles.eyeIcon}>{mostrarContrasenia ? '👁️' : '👁️‍🗨️'}</Text>
-            </TouchableOpacity>
-          </View>
-          <TextInput
-            style={styles.input}
-            placeholder='Ingresa tu Edad'
-            onChangeText={(texto) => setEdad(texto)}
-            value={edad}
-            keyboardType='numeric'
-          />
-
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.buttonI} onPress={() => register()}>
-              <Text style={styles.buttonText}>Regístrarse</Text>
-            </TouchableOpacity>
-            <View style={styles.buttonSpacer} />
-            <TouchableOpacity style={styles.buttonR} onPress={() => navigation.navigate('Inciar_Secion')}>
-              <Text style={styles.buttonText}>Iniciar sesión</Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            onPress={() => setMostrarContrasenia(!mostrarContrasenia)}
+            style={styles.showPasswordIcon}
+          >
+            <Text style={styles.eyeIcon}>{mostrarContrasenia ? '👁️' : '👁️‍🗨️'}</Text>
+          </TouchableOpacity>
         </View>
-      </ScrollView>
+        <TextInput
+          style={styles.input}
+          placeholder='Ingresa tu Edad'
+          onChangeText={(texto) => setEdad(texto)}
+          value={edad}
+          keyboardType='numeric'
+        />
+
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity style={styles.buttonI} onPress={() => register()}>
+            <Text style={styles.buttonText}>Regístrarse</Text>
+          </TouchableOpacity>
+          <View style={styles.buttonSpacer} />
+          <TouchableOpacity style={styles.buttonR} onPress={() => navigation.navigate('Inciar_Secion')}>
+            <Text style={styles.buttonText}>Iniciar sesión</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
     </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollView: {
-    flexGrow: 1,
-    justifyContent: 'center',
-  },
   container: {
     flex: 1,
     alignItems: 'center',
@@ -165,8 +169,8 @@ const styles = StyleSheet.create({
   },
   title: {
     marginTop: 100,
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 30,
+    fontFamily: 'Pixel Emulator Font',
     marginBottom: 25,
     color: '#ffffff',
   },
