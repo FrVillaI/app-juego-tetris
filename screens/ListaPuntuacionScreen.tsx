@@ -66,16 +66,17 @@ const ListaPuntuacionScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>SCORE RANKING</Text>
+     
+      <Text style={[styles.title, {color: getRandomColor()}]}>SCORE RANKING</Text>
       <FlatList
         data={scores}
         renderItem={renderItem}
         keyExtractor={(item) => item.nick}
         ListHeaderComponent={() => (
           <View style={styles.headerContainer}>
-            <Text style={styles.headerText}>RANK</Text>
-            <Text style={styles.headerText}>NAME</Text>
-            <Text style={styles.headerText}>SCORE</Text>
+               <Text style={[styles.rank, {color: getRandomColor()}]}>RANK</Text>
+               <Text style={[styles.userName, {color: getRandomColor()}]}>NAME</Text>
+               <Text style={[styles.score, {color: getRandomColor()}]}>SCORE</Text>
           </View>
         )}
       />
@@ -88,15 +89,14 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     backgroundColor: "#000000",
+    paddingTop: 20, 
   },
   title: {
-    fontSize: 30,
-    fontWeight: "bold",
     marginBottom: 20,
     textAlign: "center",
-    color: "#99FFA7",
+    fontSize: 30,
     fontFamily: 'TetrisFont',
-    marginTop: 30,
+    marginTop: 50,
   },
   itemContainer: {
     flexDirection: "row",
