@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   title: {
-    marginTop: 100,
+    marginTop: 75,
     fontSize: 30,
     fontFamily: 'Pixel Emulator Font',
     marginBottom: 25,

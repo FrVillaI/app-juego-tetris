@@ -1,14 +1,15 @@
 import 'react-native-gesture-handler';
 import { StyleSheet, View } from 'react-native';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { Text } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
 import StackNavigator from './navigators/MainNavigators';
+import { StatusBar } from 'expo-status-bar';
 
 export default function App() {
 
-  //Carga de Fuentes Personalizadas 
+  // Carga de Fuentes Personalizadas
   const [fontLoaded] = useFonts({
     'Pixel Emulator Font': require('./assets/fonts/PixelEmulator-xq08.ttf'),
     'OLD SPORT ATHLETIC Font': require('./assets/fonts/OldSport02AthleticNcv-E0gj.ttf'),
@@ -21,6 +22,7 @@ export default function App() {
         await SplashScreen.preventAutoHideAsync();
         await SplashScreen.hideAsync();
       } catch (e) {
+        // Manejo de error
       }
     }
 
@@ -32,6 +34,9 @@ export default function App() {
   }
 
   return (
-    <StackNavigator/>
+    <>
+      <StatusBar hidden={true}/>
+      <StackNavigator />
+    </>
   );
 }
