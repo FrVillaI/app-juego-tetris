@@ -1,23 +1,16 @@
 import React, { useState } from 'react';
-import { Alert, StyleSheet, Text, View, TextInput, ImageBackground, Image } from 'react-native';
+import { Alert, StyleSheet, Text, ImageBackground, Image, KeyboardAvoidingView, Keyboard} from 'react-native';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { getDatabase, ref, set, child, get } from 'firebase/database';
+import { getDatabase, ref, set, get } from 'firebase/database';
 import { auth } from '../config/Config';
-import { TouchableOpacity } from 'react-native-gesture-handler';
-import * as Font from 'expo-font';
+import CustomInput from '../components/CustomTextInput';
+import PasswordInput from '../components/PasswordInput';
+import AuthButtons from '../components/AuthButtons';
+import { ScrollView, TouchableWithoutFeedback } from 'react-native-gesture-handler';
+
 const backgroundImage = require('../assets/fondo_tetris.jpg');
 const logoImage = require('../assets/logo.png');
-const fetchFonts = async () => {
-  try {
-    await Font.loadAsync({
-      'Pixel Emulator Font': require('../assets/fonts/PixelEmulator-xq08.ttf'),
-    });
 
-    console.log('Font loaded successfully');
-  } catch (error) {
-    console.log('Error loading font', error);
-  }
-};
 export default function RegistroScreen({ navigation }: any) {
   const [correo, setCorreo] = useState('');
   const [contrasenia, setContrasenia] = useState('');
@@ -25,68 +18,72 @@ export default function RegistroScreen({ navigation }: any) {
   const [edad, setEdad] = useState('');
   const [nombre, setNombre] = useState('');
   const [mostrarContrasenia, setMostrarContrasenia] = useState(false);
-  const [camposIncompletos, setCamposIncompletos] = useState(false);
 
-  function register() {
-    // Check if the email is already in use
-    if (!nombre || !nick || !correo || !contrasenia || !edad) {
-      Alert.alert('Campos Incompletos', 'Por favor, completa todos los campos.');
-      setCamposIncompletos(true);
-      return;
-    }
+  //Funcion para registrar nuevo usuario y guardar informacion en la base de datos. 
+  async function register() {
+    if (!validacionImputsForm()) return;
+    try {
+      const db = getDatabase();
+      const usersRef = ref(db, `users/${nick}`);
+      const snapshot = await get(usersRef);
 
-    const db = getDatabase();
-    const usersRef = ref(db, 'users');
-    const query = child(usersRef, nick);
+      if (snapshot.exists()) {
+        Alert.alert('Error', 'El nick ya está en uso.');
+        return;
+      }
 
-    get(query)
-      .then((snapshot) => {
-        if (snapshot.exists()) {
-          Alert.alert('Error', 'El nick ya está en uso por otra cuenta.');
-        } else {
-          createUserWithEmailAndPassword(auth, correo, contrasenia)
-            .then((userCredential) => {
-              const user = userCredential.user;
-              const userRef = ref(db, `users/${user.uid}`);
-              set(userRef, {
-                nick: nick,
-                correo: correo,
-                edad: edad,
-                nombre: nombre,
-              });
+      const userCredential = await createUserWithEmailAndPassword(auth, correo, contrasenia);
+      const user = userCredential.user;
 
-              clearFields();
-              navigation.navigate('Inciar_Secion');
-              Alert.alert('Éxito', 'Registro exitoso');
-            })
-            .catch((error) => {
-              const errorCode = error.code;
-              const errorMessage = error.message;
-
-              switch (errorCode) {
-                case 'auth/weak-password':
-                  Alert.alert('Error', 'La contraseña es débil. Debe tener al menos 6 caracteres.');
-                  break;
-
-                case 'auth/email-already-in-use':
-                  Alert.alert(
-                    'Error',
-                    'La dirección de correo electrónico ya está en uso por otra cuenta.'
-                  );
-                  break;
-
-                default:
-                  Alert.alert('Error', errorMessage);
-                  break;
-              }
-            });
-        }
-      })
-      .catch((error) => {
-        console.error('Error checking nick availability:', error);
+      await set(ref(db, `users/${user.uid}`), {
+        nick,
+        correo,
+        edad,
+        nombre,
       });
+
+      clearFields();
+      navigation.navigate('Inciar_Secion');
+      Alert.alert('Éxito', 'Registro exitoso');
+    } catch (error) {
+      handleFirebaseError(error);
+    }
   }
 
+  //Funcion para validar si los datos ingresados son validos
+  function validacionImputsForm() {
+    const emailRegex = /\S+@\S+\.\S+/;
+    if (!emailRegex.test(correo)) {
+      Alert.alert('Error', 'Por favor ingresa un correo válido.');
+      return false;
+    }
+    if (contrasenia.length < 6) {
+      Alert.alert('Error', 'La contraseña debe tener al menos 6 caracteres.');
+      return false;
+    }
+    if (isNaN(Number(edad)) || Number(edad) <= 0) {
+      Alert.alert('Error', 'Por favor ingresa una edad válida.');
+      return false;
+    }
+    return true;
+  }
+
+  //Funcion para el manejo de errores por parte de Firebase
+  function handleFirebaseError(error: any) {
+    switch (error.code) {
+      case 'auth/weak-password':
+        Alert.alert('Error', 'La contraseña es débil.');
+        break;
+      case 'auth/email-already-in-use':
+        Alert.alert('Error', 'El correo ya está en uso.');
+        break;
+      default:
+        Alert.alert('Error', error.message);
+        break;
+    }
+  }
+
+  //Funcion para limpiar campos
   function clearFields() {
     setCorreo('');
     setContrasenia('');
@@ -96,74 +93,73 @@ export default function RegistroScreen({ navigation }: any) {
     setNombre('');
   }
 
+  //Funcion para ocultar o mostrar informacion de la contrasenia
+  const toggleMostrarContrasenia = () => {
+    setMostrarContrasenia(!mostrarContrasenia);
+  };
+
   return (
-    <ImageBackground
-      source={backgroundImage}
-      style={styles.backgroundImage}
-    >
-      <View style={styles.container}>
-        <Text style={styles.title}>Registro</Text>
-        <Image source={logoImage} style={styles.logoImage} />
+    <ImageBackground source={backgroundImage} style={styles.backgroundImage}>
+      <KeyboardAvoidingView style={{ flex: 1 }}>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <ScrollView contentContainerStyle={styles.scrollContainer}>
 
-        <TextInput
-          style={styles.input}
-          placeholder='Ingresa tu Nombre'
-          onChangeText={(texto) => setNombre(texto)}
-          value={nombre}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder='Ingresar tu Nick'
-          onChangeText={(texto) => setNick(texto)}
-          value={nick}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder='Ingresa tu Email'
-          keyboardType='email-address'
-          onChangeText={(texto) => setCorreo(texto)}
-          value={correo}
-        />
-        <View style={styles.passwordContainer}>
-          <TextInput
-            style={styles.inputPassword}
-            placeholder='Ingresa tu Contraseña'
-            onChangeText={(texto) => setContrasenia(texto)}
-            value={contrasenia}
-            secureTextEntry={!mostrarContrasenia}
-          />
-          <TouchableOpacity
-            onPress={() => setMostrarContrasenia(!mostrarContrasenia)}
-            style={styles.showPasswordIcon}
-          >
-            <Text style={styles.eyeIcon}>{mostrarContrasenia ? '👁️' : '👁️‍🗨️'}</Text>
-          </TouchableOpacity>
-        </View>
-        <TextInput
-          style={styles.input}
-          placeholder='Ingresa tu Edad'
-          onChangeText={(texto) => setEdad(texto)}
-          value={edad}
-          keyboardType='numeric'
-        />
+            <Text style={styles.title}>Registro</Text>
+            
+            <Image source={logoImage} style={styles.logoImage} />
 
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.buttonI} onPress={() => register()}>
-            <Text style={styles.buttonText}>Regístrarse</Text>
-          </TouchableOpacity>
-          <View style={styles.buttonSpacer} />
-          <TouchableOpacity style={styles.buttonR} onPress={() => navigation.navigate('Inciar_Secion')}>
-            <Text style={styles.buttonText}>Iniciar sesión</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+            <CustomInput
+              placeholder="Ingresa tu Nombre"
+              onChangeText={setNombre}
+              value={nombre}
+            />
+
+            <CustomInput
+              placeholder="Ingresar tu Nick"
+              onChangeText={setNick}
+              value={nick}
+            />
+
+            <CustomInput
+              placeholder="Ingresa tu Email"
+              onChangeText={setCorreo}
+              value={correo}
+              keyboardType="email-address"
+            />
+
+            <PasswordInput
+              value={contrasenia}
+              onChangeText={setContrasenia}
+              mostrarContrasenia={mostrarContrasenia}
+              iconoMostrarContrasenia={toggleMostrarContrasenia}
+            />
+
+            <CustomInput
+              placeholder="Ingresa tu Edad"
+              onChangeText={setEdad}
+              value={edad}
+              keyboardType="numeric"
+            />
+
+            <AuthButtons
+              onLoginPress={() => navigation.navigate('Inciar_Secion')}
+              onRegisterPress={() => register()}
+            />
+          </ScrollView>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
     </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  backgroundImage: {
     flex: 1,
+    resizeMode: 'cover',
+    justifyContent: 'center',
+  },
+  scrollContainer: {
+    flexGrow: 1,
     alignItems: 'center',
     padding: 16,
   },
@@ -174,78 +170,9 @@ const styles = StyleSheet.create({
     marginBottom: 25,
     color: '#ffffff',
   },
-  backgroundImage: {
-    flex: 1,
-    resizeMode: 'cover',
-    justifyContent: 'center',
-  },
   logoImage: {
     width: 300,
     height: 80,
     marginBottom: 40,
-  },
-  input: {
-    height: 40,
-    width: '80%',
-    borderColor: 'gray',
-    borderWidth: 1,
-    marginBottom: 20,
-    paddingHorizontal: 10,
-    backgroundColor: 'white',
-    opacity: 0.8,
-    fontSize: 16,
-  },
-  inputPassword: {
-    flex: 1,
-    height: 40,
-    borderColor: 'gray',
-    borderWidth: 1,
-    paddingHorizontal: 10,
-    backgroundColor: 'white',
-    opacity: 0.8,
-    fontSize: 16,
-    borderTopLeftRadius: 5,
-    borderBottomLeftRadius: 5,
-  },
-  passwordContainer: {
-    flexDirection: 'row',
-    width: '80%',
-    marginBottom: 20,
-  },
-  showPasswordIcon: {
-    height: 40,
-    backgroundColor: 'white',
-    opacity: 0.8,
-    borderTopRightRadius: 5,
-    borderBottomRightRadius: 5,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  eyeIcon: {
-    fontSize: 20,
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-  },
-  buttonSpacer: {
-    width: 16,
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 16,
-    textAlign: 'center',
-    fontWeight: 'bold',
-  },
-  buttonI: {
-    backgroundColor: '#c70f0f',
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    borderRadius: 5,
-  },
-  buttonR: {
-    backgroundColor: '#0fc73a',
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    borderRadius: 5,
   },
 });

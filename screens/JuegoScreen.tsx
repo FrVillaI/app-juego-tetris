@@ -321,13 +321,6 @@ const TetrisGames: React.FC = () => {
   return (
     <GestureHandlerRootView style={styles.container}>
       <>
-        <View style={styles.logoContainer}>
-          <Image
-            source={require('../assets/images/Unlogo-general-grande.inti.png' )}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-        </View>
         <Text style={styles.title}>Score: {tetris.score}</Text>
 
         <View style={styles.board}>

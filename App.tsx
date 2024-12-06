@@ -16,17 +16,9 @@ export default function App() {
   useEffect(() => {
     async function loadResourcesAndDataAsync() {
       try {
-        // Tu código de carga de recursos aquí
-
-        // Previene el ocultamiento automático de la pantalla de presentación
         await SplashScreen.preventAutoHideAsync();
-
-        // Código de configuración adicional
-
-        // Oculta manualmente la pantalla de presentación cuando estés listo
         await SplashScreen.hideAsync();
       } catch (e) {
-        // Maneja los errores aquí
       }
     }
 
@@ -38,7 +30,7 @@ export default function App() {
   }
 
   return (
-    <StackNavigator />
+    <StackNavigator/>
   );
 }
 
