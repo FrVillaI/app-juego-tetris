@@ -7,9 +7,7 @@ import CustomInput from '../components/CustomTextInput';
 import PasswordInput from '../components/PasswordInput';
 import AuthButtons from '../components/AuthButtons';
 import { ScrollView, TouchableWithoutFeedback } from 'react-native-gesture-handler';
-
-const backgroundImage = require('../assets/fondo_tetris.jpg');
-const logoImage = require('../assets/logo.png');
+import {imagenes} from '../assets/imagenes'
 
 export default function RegistroScreen({ navigation }: any) {
   const [correo, setCorreo] = useState('');
@@ -99,14 +97,14 @@ export default function RegistroScreen({ navigation }: any) {
   };
 
   return (
-    <ImageBackground source={backgroundImage} style={styles.backgroundImage}>
+    <ImageBackground source={imagenes.background} style={styles.backgroundImage}>
       <KeyboardAvoidingView style={{ flex: 1 }}>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <ScrollView contentContainerStyle={styles.scrollContainer}>
 
             <Text style={styles.title}>Registro</Text>
             
-            <Image source={logoImage} style={styles.logoImage} />
+            <Image source={imagenes.logo} style={styles.logoImage} />
 
             <CustomInput
               placeholder="Ingresa tu Nombre"

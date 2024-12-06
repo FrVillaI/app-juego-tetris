@@ -7,6 +7,8 @@ import { useFonts } from 'expo-font';
 import StackNavigator from './navigators/MainNavigators';
 
 export default function App() {
+
+  //Carga de Fuentes Personalizadas 
   const [fontLoaded] = useFonts({
     'Pixel Emulator Font': require('./assets/fonts/PixelEmulator-xq08.ttf'),
     'OLD SPORT ATHLETIC Font': require('./assets/fonts/OldSport02AthleticNcv-E0gj.ttf'),
@@ -33,12 +35,3 @@ export default function App() {
     <StackNavigator/>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});

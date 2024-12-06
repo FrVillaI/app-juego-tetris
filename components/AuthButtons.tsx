@@ -46,7 +46,7 @@ const styles = StyleSheet.create({
         borderRadius: 5,
     },
     buttonRegister: {
-        backgroundColor: '#2196F3',
+        backgroundColor: '#c70f0f',
         paddingVertical: 10,
         paddingHorizontal: 20,
         borderRadius: 5,
