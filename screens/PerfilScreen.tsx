@@ -6,18 +6,10 @@ import { getAuth, signOut, updateProfile as updateProfileAuth } from 'firebase/a
 import { storage } from '../config/Config';
 import * as ImagePicker from 'expo-image-picker';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { LogBox } from 'react-native';
 import { Fontisto } from '@expo/vector-icons';
 import { FontAwesome } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-LogBox.ignoreAllLogs(true);
-import * as Font from 'expo-font';
-
-Font.loadAsync({
-  'OLD SPORT ATHLETIC Font': require('../assets/fonts/OldSport02AthleticNcv-E0gj.ttf'),
-});
-const backgroundImage = require('../assets/fongoPe.jpg');
-const backgroundModalImage = require('../assets/fondoP.jpg');
+import { imagenes } from '../assets/imagenes'
 
 export default function PerfilScreen({ navigation }: any) {
   const [nick, setNick] = useState('');
@@ -26,134 +18,137 @@ export default function PerfilScreen({ navigation }: any) {
   const [edad, setEdad] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [image, setImagen] = useState('');
-  const [cameraImage, setCameraImage] = useState('');
-
   const [userProfilePicture, setUserProfilePicture] = useState('');
 
+  //Cargar datos del usuario con el que inicio sesion
   useEffect(() => {
     const fetchData = async () => {
       const user = auth.currentUser;
       if (user) {
         const storedImageURL = await AsyncStorage.getItem(`profilePictureURL_${user.uid}`);
-
-        if (storedImageURL) {
-          setUserProfilePicture(storedImageURL);
-        }
-
         const db = getDatabase();
         const userRef = ref(db, `users/${user.uid}`);
 
-        get(userRef)
-          .then((snapshot) => {
-            if (snapshot.exists()) {
-              const userData = snapshot.val();
-              setNick(userData.nick);
-              setCorreo(userData.correo);
-              setEdad(userData.edad);
-              setNombre(userData.nombre);
+        if (storedImageURL) setUserProfilePicture(storedImageURL);
 
-              // Set the profile picture URL for the current user
-              setUserProfilePicture(userData.profilePicture || storedImageURL || '');
-            }
-          })
-          .catch((error) => {
-            console.error('Error fetching user data:', error);
-          });
+        try {
+          const snapshot = await get(userRef);
+          if (snapshot.exists()) {
+            const userData = snapshot.val();
+            setNick(userData.nick);
+            setCorreo(userData.correo);
+            setEdad(userData.edad);
+            setNombre(userData.nombre);
+            setUserProfilePicture(userData.profilePicture || storedImageURL || '');
+          }
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+        }
       }
     };
 
     fetchData();
   }, []);
 
-  const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.All,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    });
-
-    console.log(result);
-
-    if (!result.canceled) {
-      setImagen(result.assets[0].uri);
-    }
-  };
-
-  const takePhoto = async () => {
-    let result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.All,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    });
-
-    console.log(result);
-
-    if (!result.canceled) {
-      setImagen(result.assets[0].uri);
-    }
-  };
-
-  const pickImageOrTakePhoto = async () => {
+  //Funcion para cargar escoger como subir la foto de perfil
+  const elegirImagenPerfil = async () => {
     Alert.alert(
-      'Seleccionar fuente',
+      'Actualizar Foto de Perfil',
       '¿Cómo quieres obtener la imagen?',
       [
         {
-          text: 'Seleccionar de la galería',
-          onPress: () => pickImage(),
-        },
-        {
-          text: 'Cargar Imagen',
-          onPress: () => subirImagen('Avatar1'), // Lógica para cargar imagen
-        },
-        {
           text: 'Cancelar',
           style: 'cancel',
+        },
+        {
+          text: 'Tomar foto',
+          onPress: tomarFoto,
+        },
+        {
+          text: 'Seleccionar de la galería',
+          onPress: elegirImagen,
         },
       ],
       { cancelable: true }
     );
   };
 
-  async function subirImagen(nombre: string) {
-    const storageReference = storageRef(storage, `usuarios/${auth.currentUser?.uid}/${auth.currentUser?.uid}_${nombre}`);
-    const source = cameraImage || image;
+  //Funcion para elegir la foto de perfil desde la galeria
+  const elegirImagen = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    if (!result.canceled && result.assets?.[0]?.uri) {
+      const uri = result.assets[0].uri;
+      setImagen(uri);
+      await subirImagen('Avatar', uri);
+    }
+  };
+
+  //Funcion para tomar la foto de perfil
+  const tomarFoto = async () => {
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    if (!result.canceled && result.assets?.[0]?.uri) {
+      const uri = result.assets[0].uri;
+      setImagen(uri);
+      await subirImagen('Avatar', uri);
+    }
+  };
+
+  //Funcion para cargar la foto de perfil
+  async function subirImagen(nombre: string, source: string) {
+    const user = auth.currentUser;
+    if (!user) {
+      Alert.alert('Error', 'No hay un usuario autenticado.');
+      return null;
+    }
+
+    const storageReference = storageRef(
+      storage,
+      `usuarios/${user.uid}/${user.uid}_${nombre}`
+    );
 
     try {
       const response = await fetch(source);
       const blob = await response.blob();
 
-      await uploadBytes(storageReference, blob, {
-        contentType: 'image/jpg',
-      });
+      // Subir la imagen al almacenamiento
+      await uploadBytes(storageReference, blob, { contentType: 'image/jpg' });
 
-      console.log('La imagen se subió con éxito');
+      console.log('Imagen subida con éxito.');
       const photoURL = await getDownloadURL(storageReference);
 
-      // Almacenar la URL localmente with user UID appended
-      await AsyncStorage.setItem(`profilePictureURL_${auth.currentUser?.uid}`, photoURL);
+      // Guardar la URL localmente
+      await AsyncStorage.setItem(`profilePictureURL_${user.uid}`, photoURL);
 
       // Actualizar la URL de la imagen en la base de datos
       const db = getDatabase();
-      const user = auth.currentUser;
-      if (user) {
-        const userRef = ref(db, `users/${user.uid}`);
-        update(userRef, { profilePicture: photoURL });
-      }
+      const userRef = ref(db, `users/${user.uid}`);
+      await update(userRef, { profilePicture: photoURL });
 
-      Alert.alert('Éxito', 'Imagen cargada correctamente');
+      // Actualizar también en Firebase Authentication
+      await updateProfileAuth(user, { photoURL });
 
+      Alert.alert('Éxito', 'Imagen de perfil actualizada correctamente.');
       return photoURL;
     } catch (error) {
-      console.error(error);
-
+      console.error('Error al subir la imagen:', error);
+      Alert.alert('Error', 'No se pudo subir la imagen.');
       return null;
     }
   }
 
-
+  //Funcion para cerrar sesion
   function cerrarSesion() {
     const auth = getAuth();
     signOut(auth)
@@ -165,66 +160,58 @@ export default function PerfilScreen({ navigation }: any) {
       });
   }
 
-  function updateProfile() {
-    const db = getDatabase();
+  //Funcion para utilizar únicamente los datos
+  async function actualizarDatos() {
     const user = auth.currentUser;
 
-    if (user) {
-      const userRef = ref(db, `users/${user.uid}`);
+    if (!user) {
+      Alert.alert('Error', 'No hay un usuario autenticado.');
+      return;
+    }
 
-      subirImagen('Avatar1').then((photoURL) => {
-        update(userRef, {
-          edad: edad,
-          nombre: nombre,
-          nick: nick,
-          correo: correo,
-          profilePicture: photoURL // Actualizar la URL de la imagen de perfil
-        })
-          .then(() => {
-            setModalVisible(false);
-            Alert.alert('Éxito', 'Perfil actualizado correctamente');
-          })
-          .catch((error) => {
-            console.error('Error updating profile:', error);
-          });
+    const db = getDatabase();
+    const userRef = ref(db, `users/${user.uid}`);
 
-        updateProfileAuth(user, {
-          displayName: nombre,
-          photoURL: photoURL,
-        })
-          .then(() => {
-            console.log('User profile updated successfully');
-          })
-          .catch((error) => {
-            console.error('Error updating user profile:', error);
-          });
+    try {
+      // Actualiza los datos en la base de datos
+      await update(userRef, {
+        edad: edad,
+        nombre: nombre,
+        nick: nick,
+        correo: correo,
       });
+
+      // Actualiza los datos en Firebase Authentication
+      await updateProfileAuth(user, {
+        displayName: nombre,
+      });
+
+      Alert.alert('Éxito', 'Datos del perfil actualizados correctamente.');
+    } catch (error) {
+      console.error('Error al actualizar los datos:', error);
+      Alert.alert('Error', 'Hubo un problema al actualizar los datos.');
     }
   }
 
-
   return (
-    <ImageBackground source={backgroundImage} style={styles.backgroundImage}>
+    <ImageBackground source={imagenes.backgroundPerfil} style={styles.backgroundImage}>
       <View style={styles.container}>
         <Text style={styles.title}>PERFIL DE USUARIO</Text>
         <View style={styles.imageContainer}>
-          <TouchableOpacity onPress={pickImageOrTakePhoto}>
-            {cameraImage || image || userProfilePicture ? (
-              <Image source={{ uri: cameraImage || image || userProfilePicture }} style={styles.circularImage} />
+          <TouchableOpacity>
+            {image || userProfilePicture ? (
+              <Image source={{ uri: userProfilePicture || image }} style={styles.circularImage} />
             ) : (
               <View style={styles.circularPlaceholder}>
                 <Fontisto name="person" size={40} color="black" />
               </View>
             )}
-
           </TouchableOpacity>
 
-          {/* Agregar el ícono de la cámara a la derecha de la imagen */}
-          <TouchableOpacity style={styles.cameraIconContainer} onPress={takePhoto}>
+          <TouchableOpacity style={styles.cameraIconContainer} onPress={elegirImagenPerfil}>
             <FontAwesome name="camera" size={24} color="white" />
           </TouchableOpacity>
         </View>
-
 
         <View style={styles.infoContainer}>
           <Text style={styles.label}>NOMBRE :  {nombre}</Text>
@@ -249,7 +236,7 @@ export default function PerfilScreen({ navigation }: any) {
           visible={modalVisible}
           onRequestClose={() => setModalVisible(!modalVisible)}
         >
-          <ImageBackground source={backgroundModalImage} style={styles.backgroundImage}>
+          <ImageBackground source={imagenes.backgroundPerfilModal} style={styles.backgroundImage}>
             <View style={styles.modalContainer}>
               <Text style={styles.title}>ACTUALIZAR  DATOS</Text>
               <TextInput
@@ -264,7 +251,7 @@ export default function PerfilScreen({ navigation }: any) {
                 value={edad}
                 onChangeText={(texto) => setEdad(texto)}
               />
-              <TouchableOpacity style={styles.button} onPress={updateProfile}>
+              <TouchableOpacity style={styles.button} onPress={actualizarDatos}>
                 <Text style={styles.buttonText}>ACTUALIZAR</Text>
               </TouchableOpacity>
 
@@ -316,14 +303,14 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 25,
     marginBottom: 20,
-   
+
     fontFamily: 'OLD SPORT ATHLETIC Font',
     color: 'white',
   },
   infoContainer: {
     marginBottom: 22,
-   
- 
+
+
   },
   label: {
     fontSize: 16,
@@ -355,10 +342,10 @@ const styles = StyleSheet.create({
     width: '80%',
     alignItems: 'center',
     justifyContent: 'center',
-  
+
   },
   buttonText: {
-  
+
     fontSize: 22,
     textAlign: 'center',
     color: '#000000',
@@ -373,7 +360,7 @@ const styles = StyleSheet.create({
     width: '80%',
     alignItems: 'center',
     justifyContent: 'center',
-    
+
   },
   buttonTextDel: {
     color: '#000000',
@@ -401,7 +388,7 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 20,
     textAlign: 'center',
-    
+
     marginTop: 20,
   },
   img: {
