@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { View, Text, FlatList, StyleSheet } from "react-native";
 import { ref, onValue } from "firebase/database";
 import { db } from "../config/Config";
-
+import * as Font from 'expo-font';
 
 // Interfaz para los datos de puntuación
 interface Score {
@@ -11,12 +11,22 @@ interface Score {
 }
 
 const ListaPuntuacionScreen: React.FC = () => {
-  const [scores, setScores] = useState<Score[]>([]);
+  const [scores, setScores] = useState<Score[]>([]); // Estado para los puntajes
+  const [fontLoaded, setFontLoaded] = useState(false); // Estado para verificar si la fuente se ha cargado
 
   // Cargar la fuente y los puntajes cuando se monta el componente
   useEffect(() => {
+    loadFont(); 
     fetchScores();
   }, []);
+
+  // Cargar la fuente personalizada
+  const loadFont = async () => {
+    await Font.loadAsync({
+      'TetrisFont': require('../assets/fonts/Tetris.ttf'),
+    });
+    setFontLoaded(true);
+  };
 
   // Obtener los puntajes desde Firebase
   const fetchScores = () => {
@@ -30,12 +40,12 @@ const ListaPuntuacionScreen: React.FC = () => {
           score: data.score,
         });
       });
-      scoresData.sort((a, b) => b.score - a.score);
+      scoresData.sort((a, b) => b.score - a.score); // Ordenar los puntajes de mayor a menor
       setScores(scoresData);
     });
 
     return () => {
-      unsubscribe();
+      unsubscribe(); // Limpiar la suscripción cuando el componente se desmonte
     };
   };
 
@@ -55,14 +65,19 @@ const ListaPuntuacionScreen: React.FC = () => {
     </View>
   );
 
+  // Mostrar un placeholder mientras se carga la fuente
+  if (!fontLoaded) {
+    return null;
+  }
 
   return (
     <View style={styles.container}>
       <Text style={[styles.title, { color: getRandomColor() }]}>SCORE RANKING</Text>
+      
       <FlatList
         data={scores}
         renderItem={renderItem}
-        keyExtractor={(item, index) => item.nick + index.toString()} 
+        keyExtractor={(item) => item.nick}
         ListHeaderComponent={() => (
           <View style={styles.headerContainer}>
             <Text style={[styles.rank, { color: getRandomColor() }]}>RANK</Text>
@@ -71,11 +86,11 @@ const ListaPuntuacionScreen: React.FC = () => {
           </View>
         )}
       />
-
     </View>
   );
 };
 
+// Estilos
 const styles = StyleSheet.create({
   container: {
     flex: 1,

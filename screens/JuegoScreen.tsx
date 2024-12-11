@@ -4,18 +4,12 @@ import { TouchableOpacity, GestureHandlerRootView } from "react-native-gesture-h
 import { getDatabase, ref, update, set } from 'firebase/database';
 import { db } from "../config/Config";
 import { auth } from '../config/Config';
-import { getAuth } from 'firebase/auth';
-import { Fontisto } from '@expo/vector-icons';
-import { FontAwesome } from '@expo/vector-icons';
-import { Entypo } from '@expo/vector-icons';
-import { useFonts } from "expo-font";
 import { Audio } from 'expo-av';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faPlay, faArrowLeft, faArrowRight, faUndoAlt, faArrowDown } from '@fortawesome/free-solid-svg-icons';
 
-
 const BOARD_X = 8;
-const BOARD_Y = 15;
+const BOARD_Y = 14;
 
 const SHAPES: number[][][] = [
   [[1, 1, 1, 1]],
@@ -381,7 +375,7 @@ const styles = StyleSheet.create({
     fontSize: 24, 
     fontWeight: "bold", 
     textAlign: "center", 
-    marginTop: 20,  
+    marginTop: 5,  
     color: "#FFFFFF" 
   }, 
   board: { 
