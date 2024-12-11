@@ -10,6 +10,7 @@ import { Fontisto } from '@expo/vector-icons';
 import { FontAwesome } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { imagenes } from '../assets/imagenes'
+import CustomInput from '../components/CustomTextInput';
 
 export default function PerfilScreen({ navigation }: any) {
   const [nick, setNick] = useState('');
@@ -239,18 +240,19 @@ export default function PerfilScreen({ navigation }: any) {
           <ImageBackground source={imagenes.backgroundPerfilModal} style={styles.backgroundImage}>
             <View style={styles.modalContainer}>
               <Text style={styles.title}>ACTUALIZAR  DATOS</Text>
-              <TextInput
-                style={styles.input}
+
+              <CustomInput
                 placeholder="Nuevo Nombre"
+                onChangeText={setNombre}
                 value={nombre}
-                onChangeText={(texto) => setNombre(texto)}
               />
-              <TextInput
-                style={styles.input}
+
+              <CustomInput
                 placeholder="Nueva Edad"
+                onChangeText={setEdad}
                 value={edad}
-                onChangeText={(texto) => setEdad(texto)}
               />
+
               <TouchableOpacity style={styles.button} onPress={actualizarDatos}>
                 <Text style={styles.buttonText}>ACTUALIZAR</Text>
               </TouchableOpacity>
@@ -309,8 +311,6 @@ const styles = StyleSheet.create({
   },
   infoContainer: {
     marginBottom: 22,
-
-
   },
   label: {
     fontSize: 16,
@@ -320,18 +320,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     color: 'white',
     fontFamily: 'OLD SPORT ATHLETIC Font',
-  },
-  input: {
-    height: 40,
-    width: '80%',
-    borderColor: 'gray',
-    borderWidth: 1,
-    marginBottom: 20,
-    paddingHorizontal: 10,
-    backgroundColor: 'white',
-    opacity: 0.8,
-    fontSize: 16,
-    borderRadius: 5,
   },
   button: {
     backgroundColor: '#92fa7a',
@@ -345,7 +333,6 @@ const styles = StyleSheet.create({
 
   },
   buttonText: {
-
     fontSize: 22,
     textAlign: 'center',
     color: '#000000',
@@ -360,7 +347,6 @@ const styles = StyleSheet.create({
     width: '80%',
     alignItems: 'center',
     justifyContent: 'center',
-
   },
   buttonTextDel: {
     color: '#000000',
